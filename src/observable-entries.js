@@ -1,11 +1,13 @@
 'use strict';
 define(['knockout'], function (ko) {
-    var Entry = function (observable) {
+    /** @constructor */
+    function ObservableEntry(observable) {
         this.observable = observable;
         this.optionalObservable = ko.observable(observable);
         this.refcount = 1;
-    };
+    }
 
+    // TODO reduce interface to minimum (addReference, addOptionalReference, releaseReference, updateEntries, dispose, ...?)
     return function ObservableEntries(idSelector, observableStateTransitioner) {
         observableStateTransitioner = observableStateTransitioner || {
             constructor: function (entry) {
@@ -27,7 +29,7 @@ define(['knockout'], function (ko) {
         var hashtable = {};
 
         var newInvalidIdTypeError = function (id) {
-            throw new Error('Ids müssen Strings sein. Unerwartete Id \'' + id + '\' des Typs \'' + typeof id + '\'.');
+            throw new Error('Illegal argument: Ids must be strings (\'' + id + '\' is of type \'' + typeof id + '\').');
         };
 
         this.addReference = value => addAnyReference(value).observable;
@@ -49,7 +51,7 @@ define(['knockout'], function (ko) {
         };
 
         var addEntry = function (id, value) {
-            var entry = new Entry(observableStateTransitioner.constructor(value));
+            var entry = new ObservableEntry(observableStateTransitioner.constructor(value));
             hashtable[id] = entry;
             return entry;
         };

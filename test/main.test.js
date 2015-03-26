@@ -48,7 +48,7 @@ require(['require', 'chai'], function (require, chai) {
         });
     });
 
-    require(['open-view/open-view'], function () {
+    require(['client-side-data-source/client-side-data-source.test'], function () {
         window.__karma__.start();
     });
 
