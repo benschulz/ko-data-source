@@ -13,7 +13,7 @@ define(['knockout', 'onefold-js', 'onefold-lists', './subviews'], function (ko, 
         return false;
     }
 
-    // TODO this actually duplicates some tiny parts of AbstractView... consolidate somehow? (the prototypes are interesting too, perhaps more so)
+    // TODO rename AbstractView AbstractIndexedView and extract an AbstractView from it to inherit from
     function ClippedView(parent, offset, limit) {
         var observableEntries = parent._observableEntries;
         this.__parent = parent;
@@ -58,7 +58,7 @@ define(['knockout', 'onefold-js', 'onefold-lists', './subviews'], function (ko, 
         });
     }
 
-    ClippedView.prototype = js.functions.identity({
+    ClippedView.prototype = {
         get values() { return this.__values; },
         get observables() {
             if (!this.__observables)
@@ -80,7 +80,7 @@ define(['knockout', 'onefold-js', 'onefold-lists', './subviews'], function (ko, 
             if (this.__observables)
                 this.__values().forEach(this.__parent._observableEntries.releaseReference);
         }
-    });
+    };
 
     subviews.ClippedView = ClippedView;
     return ClippedView;

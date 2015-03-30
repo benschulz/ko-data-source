@@ -7,7 +7,7 @@ define(['onefold-js', './limitable-query-configurator'], function (js, Limitable
 
     var proto = {
         offsetBy: function (offset) {
-            return new LimitableQueryConfigurator(this._predicate, this._comparator, offset);
+            return new LimitableQueryConfigurator(this.predicate, this.comparator, offset);
         }
     };
 

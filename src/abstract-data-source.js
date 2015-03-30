@@ -27,7 +27,7 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
             return this.streamValues(queryConfiguration).then(values => {
                 return new MappedResource(values,
                     this.__observableEntries.addReference.bind(this.__observableEntries),
-                    this.__observableEntries.releaseReference.bind(this.__observableEntries)                );
+                    this.__observableEntries.releaseReference.bind(this.__observableEntries));
             });
         },
 
@@ -76,9 +76,9 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
     /**
      * @constructor
      * @template I, V, O
-     * @extends {OptionalEntryView<V, O>}
+     * @extends {de.benshu.ko.dataSource.OptionalEntryView<V, O>}
      *
-     * @param {ObservableEntries<I, V, O>} observableEntries
+     * @param {de.benshu.ko.dataSource.ObservableEntries<I, V, O>} observableEntries
      * @param {function(V):I} getValueById
      * @param {I} entryId
      */
@@ -140,6 +140,99 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
             }
         }
     };
+
+    var TRUE = function () {return true; };
+    var ZERO = function () {return 0; };
+
+    /**
+     * @constructor
+     * @template V
+     *
+     * @param {(function(V):boolean|ko.Subscribable<function(V):boolean>)=} predicate
+     * @param {(function(V, V):number|ko.Subscribable<function(V, V):number>)=} comparator
+     * @param {(number|ko.Subscribable<number>)=} offset
+     * @param {(number|ko.Subscribable<number>)=} limit
+     */
+    function OpenViewKey(predicate, comparator, offset, limit) {
+        this.predicate = predicate || TRUE;
+        this.comparator = comparator || ZERO;
+        this.offset = offset || 0;
+        this.limit = limit || limit === 0 ? limit : Number.POSITIVE_INFINITY;
+
+        this.rank = Math.max(
+            this.predicate === TRUE ? OpenViewKey.RANK_ROOT : OpenViewKey.RANK_FILTERED,
+            this.comparator === ZERO ? OpenViewKey.RANK_ROOT : OpenViewKey.RANK_SORTED,
+            this.offset === 0 && this.limit === Number.POSITIVE_INFINITY ? OpenViewKey.RANK_ROOT : OpenViewKey.RANK_CLIPPED
+        );
+    }
+
+    OpenViewKey.RANK_ROOT = 0;
+    OpenViewKey.RANK_FILTERED = 1;
+    OpenViewKey.RANK_SORTED = 2;
+    OpenViewKey.RANK_CLIPPED = 3;
+    OpenViewKey.fromQuery = function (query) {
+        return new OpenViewKey(query.predicate, query.comparator, query.offset, query.limit);
+    };
+
+    OpenViewKey.prototype = {
+        equals: function (other) {
+            return this.rank === other.rank
+                && this.predicate === other.predicate
+                && this.comparator === other.comparator
+                && this.offset === other.offset
+                && this.limit === other.limit;
+        },
+        reduceRank: function () {
+            if (this.rank <= 0)
+                throw new Error('Unsupported operation.');
+
+            var args = [null, this.predicate, this.comparator].slice(0, this.rank);
+            /** @type {function(new:OpenViewKey<V>)} */
+            var ReducedRankKeyConstructor = OpenViewKey.bind.apply(OpenViewKey, args);
+            return new ReducedRankKeyConstructor();
+        },
+        allRanks: function () {
+            return this.rank === 0 ? [this] : this.reduceRank().allRanks().concat([this]);
+        },
+        applyPrimaryTransformation: function (view) {
+            var accessor = [v => v.filteredBy, v => v.sortedBy, v => v.clipped][this.rank - 1];
+            var args = [[this.predicate], [this.comparator], [this.offset, this.limit]][this.rank - 1];
+
+            return accessor(view).apply(view, args);
+        }
+    };
+
+    /**
+     * @constructor
+     *
+     * @param key
+     * @param view
+     * @param disposer
+     */
+    function OpenViewReference(key, view, disposer) {
+        this.key = key;
+        this.view = view;
+        this.referenceCount = 1;
+        this.disposer = disposer;
+    }
+
+    OpenViewReference.prototype = {
+        addReference: function () {
+            if (this.referenceCount <= 0)
+                throw new Error('Assertion error: Reference count at `' + this.referenceCount + '`.');
+            ++this.referenceCount;
+            return this;
+        },
+        releaseReference: function () {
+            if (--this.referenceCount === 0) {
+                this.disposer();
+            }
+            return this;
+        }
+    };
+
+    AbstractDataSource.OpenViewKey = OpenViewKey;
+    AbstractDataSource.OpenViewReference = OpenViewReference;
 
     return AbstractDataSource;
 });

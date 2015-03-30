@@ -1,223 +1,218 @@
-//'use strict';
-//
-//define(['knockout', 'onefold-js', 'onefold-lists'], function (ko, js, lists) {
-//
-//    // TODO jsdoc
-//    return function ServerSideDataSource(idSelector, observableEntries, query) {
-//        var values = {};
-//
-//        this.openEntryView = entryId => {
-//            var optionalEntryView = this.openOptionalEntryView(entryId);
-//            var subscription = null;
-//
-//            return {
-//                value: optionalEntryView.value.bind(optionalEntryView),
-//                observable: function () {
-//                    if (!subscription) {
-//                        subscription = optionalEntryView.optionalObservable().subscribe(function () {
-//                            throw new Error('Illegal state: A non-optional view for this entry is still open.');
-//                        });
-//                    }
-//
-//                    return optionalEntryView.observable();
-//                },
-//                dispose: function () {
-//                    if (subscription)
-//                        subscription.dispose();
-//                    optionalEntryView.dispose();
-//                }
-//            };
-//        };
-//
-//        this.openOptionalEntryView = entryId => {
-//            var disposed = false;
-//            var lastKnownValue = null;
-//            var observable = null;
-//            var optionalObservable = null;
-//            var subscription = null;
-//
-//            var assertNotDisposed = function () {
-//                if (disposed)
-//                    throw new Error('Illegal state: Entry view was already disposed.');
-//            };
-//
-//            return {
-//                value: function () {
-//                    assertNotDisposed();
-//                    if (!js.objects.hasOwn(values, entryId))
-//                        throw new Error('No entry with id `' + entryId + '` present.');
-//                    lastKnownValue = values[entryId];
-//                    return lastKnownValue;
-//                },
-//                observable: function () {
-//                    assertNotDisposed();
-//                    if (!observable)
-//                        this.optionalObservable();
-//                    return observable;
-//                },
-//                optionalObservable: function () {
-//                    assertNotDisposed();
-//                    if (optionalObservable)
-//                        return optionalObservable;
-//
-//                    var sharedObservable = observableEntries.addOptionalReference(this.value());
-//
-//                    observable = sharedObservable();
-//                    optionalObservable = ko.observable({
-//                        present: true,
-//                        observable: this.observable()
-//                    });
-//
-//                    subscription = sharedObservable.subscribe(() => {
-//                        optionalObservable({
-//                            present: false,
-//                            observable: this.observable()
-//                        });
-//                    });
-//
-//                    return optionalObservable;
-//                },
-//                dispose: function () {
-//                    assertNotDisposed();
-//                    disposed = true;
-//
-//                    if (subscription) {
-//                        subscription.dispose();
-//                        observableEntries.releaseReference(lastKnownValue);
-//                        lastKnownValue = observable = optionalObservable = subscription = null;
-//                    }
-//                }
-//            };
-//        };
-//
-//        function doQuery(filter, comparator, offset, amount, handler) {
-//            query(filter, comparator, offset, amount)
-//                .then(vs => {
-//                    vs = vs.slice();
-//
-//                    var refs = vs.map(v => {
-//                        var id = idSelector(v);
-//
-//                        var ref = js.objects.hasOwn(values, id)
-//                            ? values[id]
-//                            : (values[id] = {count: 1, value: v});
-//
-//                        ++ref.count;
-//                    });
-//
-//                    handler(lists.newArrayList(vs), () => {
-//                        refs.forEach(ref => {
-//                            if (--ref.count === 0)
-//                                delete values[idSelector(ref.value)];
-//                        });
-//                    });
-//                });
-//        }
-//
-//
-//        this.openView = () => new QueryView();
-//
-//        function QueryView(filter, comparator, offset, amount) {
-//            var values = ko.observable(lists.newArrayList());
-//            var observables = false;
-//            var disposed = false;
-//
-//            var oldValueDisposer = () => {};
-//            var doDispose = () => {
-//                if (observables) {
-//                    values().forEach(observableEntries.releaseReference);
-//                    observables = false;
-//                }
-//                oldValueDisposer();
-//            };
-//
-//            var queryComputer = ko.pureComputed(() => {
-//                if (disposed && values().length) {
-//                    doDispose();
-//                    values(lists.newArrayList());
-//                } else if (!disposed)
-//                    doQuery(
-//                        ko.unwrap(filter) || (() => true),
-//                        ko.unwrap(comparator) || (() => 0),
-//                        ko.unwrap(offset) || 0,
-//                        ko.unwrap(amount) || Number.POSITIVE_INFINITY,
-//
-//                        (values, disposer) => {
-//                            values(values);
-//                            doDispose();
-//                            oldValueDisposer = disposer;
-//                        });
-//            });
-//
-//            var valuesComputer = ko.pureComputed(()=> {
-//                queryComputer();
-//                return values();
-//            });
-//
-//            var observablesComputer = ko.pureComputed(()=> {
-//                var vals = valuesComputer();
-//                observables = vals.length > 0;
-//                return vals.map(observableEntries.addReference);
-//            });
-//
-//            var internal = {
-//                get values() { return valuesComputer; },
-//                get observables() { return observablesComputer; }
-//            };
-//
-//            js.objects.extend(internal, {
-//                get 'values'() { return this.values; },
-//                get 'observables'() { return this.observables; },
-//
-//                'filteredBy': function (f) {
-//                    if (offset !== undefined || amount !== undefined)
-//                        throw new Error('Filtering a clipped view is not supported.');
-//                    if (comparator !== undefined)
-//                        throw new Error('Filtering an ordered view is not supported.');
-//
-//                    return new QueryView(filter ? filter.and(f) : f: )
-//                },
-//                "sortedBy": proto.sortedBy,
-//                'clipped': proto.clipped
-//            });
-//        }
-//
-//        this['openView'] = this.openView;
-//
-//        this['addEntries'] = function (newEntries) {
-//            values.addAll(newEntries);
-//            new Delta(newEntries).propagateTo(deltas);
-//        };
-//
-//        this['updateEntries'] = function (updatedEntries) {
-//            values.updateAll(updatedEntries);
-//            new Delta([], updatedEntries).propagateTo(deltas);
-//            observableEntries.updateEntries(updatedEntries);
-//        };
-//
-//        this['addOrUpdateEntries'] = function (entries) {
-//            var added = [];
-//            var updated = [];
-//            entries.forEach(function (entry) {
-//                (values.contains(entry) ? updated : added).push();
-//            });
-//            new Delta(added, updated).propagateTo(deltas);
-//        };
-//
-//        this['removeEntries'] = function (entries) {
-//            values.removeAll(entries);
-//            new Delta([], [], entries).propagateTo(deltas);
-//        };
-//
-//        this['replaceEntries'] = function (newEntries) {
-//            var removedEntries = values.toArray();
-//            values.clear();
-//            values.addAll(newEntries);
-//            new Delta(newEntries, [], removedEntries).propagateTo(deltas);
-//            // TODO update only those that were already there before the delta was propagated
-//            observableEntries.updateEntries(newEntries);
-//        };
-//
-//        this.dispose = function () { };
-//    };
-//});
+'use strict';
+
+define(function (require) {
+    var ko = require('knockout'),
+        js = require('onefold-js'),
+        lists = require('onefold-lists'),
+    //
+        AbstractDataSource = require('../abstract-data-source'),
+        QueryConfigurator = require('../queries/query-configurator');
+
+    var hasOwn = js.objects.hasOwn;
+
+    /**
+     * @constructor
+     * @template I, V, O
+     * @extends {de.benshu.ko.dataSource.DataSource<I, V, O>}
+     */
+    function ServerSideDataSource(idSelector, observableEntries, querier) {
+        var values = {};
+
+        AbstractDataSource.call(this, observableEntries, entryId => {
+            if (!hasOwn(values, entryId))
+                throw new Error('No known entry with id `' + entryId + '`.');
+            return values[entryId].value;
+        });
+
+        this.__idSelector = idSelector;
+        this.__observableEntries = observableEntries;
+        this.__querier = querier;
+        this.__values = values;
+        this.__size = ko.observable(0);
+        this.__computedSize = ko.pureComputed(() => this.__size());
+        this.__openViewReferences = [];
+    }
+
+    ServerSideDataSource.prototype = {
+        get size() { return this.__computedSize; },
+
+        __addValueReference: function (value) {
+            var id = this.__idSelector(value);
+
+            if (hasOwn(this.__values, id)) {
+                var ref = this.__values[id];
+                ++ref.referenceCount;
+                ref.value = value;
+            } else {
+                this.__values[id] = {
+                    referenceCount: 1,
+                    value: value
+                };
+            }
+        },
+        __releaseValueReference: function (value) {
+            var id = this.__idSelector(value);
+
+            if (!hasOwn(this.__values, id))
+                throw new Error('Assertion error: Value with id `' + id + '` was expected to be referenced.');
+
+            if (--this.__values[id].referenceCount === 0)
+                delete this.__values[id];
+        },
+
+        openView: function (queryConfiguration) {
+            var query = (queryConfiguration || (x => x))(new QueryConfigurator());
+            var key = AbstractDataSource.OpenViewKey.fromQuery(query);
+
+            var existing = js.arrays.singleOrNull(this.__openViewReferences, v => key.equals(v.key));
+
+            if (existing)
+                return existing.addReference().view;
+            else {
+                var view = new ServerSideView(this, query, () => ref.releaseReference());
+                var ref = new AbstractDataSource.OpenViewReference(key, view, () => this.__openViewReferences.splice(this.__openViewReferences.indexOf(ref), 1));
+                this.__openViewReferences.push(ref);
+
+                return view;
+            }
+        },
+        streamValues: function (queryConfiguration) {
+            /** @type {?} */
+            var query = (queryConfiguration || (x => x))(new QueryConfigurator());
+            return this.__querier['issue'](query.unwrapArguments().normalize());
+        },
+
+        dispose: function () {
+            if (this.__openViewReferences.length) {
+                var views = this.__openViewReferences.length;
+                var referenceCount = this.__openViewReferences.reduce((c, r) => c + r.referenceCount, 0);
+                window.console.warn('Some views were not or are not yet disposed (' + views + ' views, ' + referenceCount + ' references).');
+            }
+        }
+    };
+
+    ServerSideDataSource.prototype = js.objects.extend({}, AbstractDataSource.prototype, {
+        get 'size'() { return this.size; },
+
+        'dispose': ServerSideDataSource.prototype.dispose,
+        'openView': ServerSideDataSource.prototype.openView,
+        'streamValues': ServerSideDataSource.prototype.streamValues
+    }, ServerSideDataSource.prototype);
+
+    /**
+     * @constructor
+     * @template V, O
+     * @extends {de.benshu.ko.dataSource.View<V, O>}
+     *
+     * @param {ServerSideDataSource} dataSource
+     * @param query
+     * @param disposer
+     */
+    function ServerSideView(dataSource, query, disposer) {
+        var requestPending = ko.observable(false);
+        var metadata = ko.observable({'unfilteredSize': dataSource.size.peek(), 'filteredSize': 0});
+
+        var previousValues = lists.newArrayList();
+        var receivedValues = ko.observable();
+
+        var computer = ko.pureComputed(() => {
+            if (requestPending.peek())
+                return requestPending();
+
+            requestPending(true);
+
+            var q = query.unwrapArguments().normalize();
+
+            window.setTimeout(() => {
+                if (!q.equals(query.unwrapArguments().normalize()))
+                    return requestPending(false);
+
+                dataSource.__querier['issue'](q)
+                    .then(r => {
+                        var newlyReceivedValues = [];
+                        r['values'].reduce((_, v) => newlyReceivedValues.push(v));
+                        receivedValues(newlyReceivedValues);
+
+                        delete r['values'];
+                        dataSource.__size(r['unfilteredSize']);
+                        metadata(r);
+                    })
+                    .then(() => requestPending(false), () => requestPending(false));
+            }); // TODO maybe the user wants to specify a delay > 0 ?
+        });
+
+        var values = ko.pureComputed(() => {
+            computer(); // wake up the computer
+
+            var newValues = receivedValues();
+            var result = lists.newArrayList(newValues);
+
+            if (observablesList) {
+                observablesList = result.map(v => {
+                    dataSource.__addValueReference(v);
+                    return dataSource.__observableEntries.addReference(v);
+                });
+
+                previousValues.forEach(v => {
+                    dataSource.__releaseValueReference(v);
+                    dataSource.__observableEntries.releaseReference(v);
+                });
+            } else {
+                result.forEach(dataSource.__addValueReference.bind(dataSource));
+                previousValues.forEach(dataSource.__releaseValueReference.bind(dataSource));
+            }
+
+            previousValues = result;
+
+            return result;
+        });
+        this.__values = values;
+
+        var observablesList = null;
+        this.__observables = ko.pureComputed(() => {
+            values(); // the values computation updates the observablesList
+
+            if (!observablesList)
+                observablesList = previousValues.map(dataSource.__observableEntries.addReference);
+
+            return observablesList;
+        });
+        this.__observables.subscribe(() => observablesList = null, null, 'asleep');
+
+        this.__dirty = ko.pureComputed(() => requestPending());
+
+        this.__metadata = ko.pureComputed(() => metadata());
+        this.__filteredSize = ko.pureComputed(() => metadata()['filteredSize']);
+        this.__size = ko.pureComputed(() => values().size());
+
+        this.__dispose = () => {
+            computer.dispose();
+            disposer();
+        };
+    }
+
+    ServerSideView.prototype = {
+        get dirty() { return this.__dirty; },
+        get filteredSize() { return this.__filteredSize; },
+        get metadata() { return this.__metadata;},
+        get observables() { return this.__observables;},
+        get size() { return this.__size; },
+        get values() { return this.__values;},
+
+        dispose: function () { this.__dispose(); }
+    };
+
+    ServerSideView.prototype = js.objects.extend({}, {
+        get 'dirty'() { return this.dirty; },
+        get 'filteredSize'() { return this.filteredSize; },
+        get 'metadata'() { return this.metadata; },
+        get 'observables'() { return this.observables; },
+        get 'size'() { return this.size; },
+        get 'values'() { return this.values; },
+
+        'dispose': ServerSideView.prototype.dispose
+    }, ServerSideView.prototype);
+
+    return ServerSideDataSource;
+})
+;

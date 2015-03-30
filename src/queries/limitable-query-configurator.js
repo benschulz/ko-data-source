@@ -7,7 +7,7 @@ define(['onefold-js', './query'], function (js, Query) {
 
     var proto = {
         limitedTo: function (limit) {
-            return new Query(this._predicate, this._comparator, this._offset, limit);
+            return new Query(this.predicate, this.comparator, this.offset, limit);
         }
     };
 

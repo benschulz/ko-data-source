@@ -7,7 +7,7 @@ define(['onefold-js', './offsettable-query-configurator'], function (js, Offsett
 
     var proto = {
         sortedBy: function (comparator) {
-            return new OffsettableQueryConfigurator(this._predicate, comparator);
+            return new OffsettableQueryConfigurator(this.predicate, comparator);
         }
     };
 

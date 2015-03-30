@@ -7,7 +7,17 @@ define(['knockout', 'onefold-js', 'indexed-list', '../delta', './subviews'], fun
         this._deltas = deltas || ko.observable(new Delta());
 
         this._values = ko.observable(this._indexedValues.readOnly());
-        this._observables = null;
+
+        this.__observablesList = null;
+        this.__observables = ko.pureComputed(() => {
+            this._values();
+
+            if (!this.__observablesList)
+                this.__observablesList = this._indexedValues.map(this._observableEntries.addReference);
+
+            return this.__observablesList;
+        });
+        this.__observables.subscribe(() => this.__observablesList = null, null, 'asleep');
     }
 
     AbstractView.prototype = {
@@ -15,23 +25,18 @@ define(['knockout', 'onefold-js', 'indexed-list', '../delta', './subviews'], fun
         get _observableEntries() { return this._parent._observableEntries; },
 
         get values() { return this._values; },
-        get observables() {
-            if (!this._observables)
-                this._observables = ko.observable(this._indexedValues.map(this._observableEntries.addReference));
-            return this._observables;
-        },
+        get observables() { return this.__observables; },
 
         _synchronizeObservables: function (delta) {
-            this._values.valueHasMutated();
-
-            if (this._observables) {
+            if (this.__observablesList) {
                 delta.added.forEach(this._observableEntries.addReference);
-                this._observables(this._indexedValues.map(this._observableEntries.lookup));
+                this.__observablesList = this._indexedValues.map(this._observableEntries.lookup);
                 delta.removed.forEach(this._observableEntries.releaseReference);
             }
+            this._values.valueHasMutated();
         },
         _releaseObservableReferences: function () {
-            if (this._observables)
+            if (this.__observables)
                 this._indexedValues.forEach(this._observableEntries.releaseReference);
         },
         forceUpdateIfNecessary: function () {

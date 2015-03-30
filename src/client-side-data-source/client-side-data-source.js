@@ -28,22 +28,26 @@ define(function (require) {
         this.__deltas = ko.observable(new Delta());
         this.__openViewReferences = [];
 
-        this.__addOpenViewReference(new OpenViewKey(), new views.RootView(this.__idSelector, this.__observableEntries, this.__values, this.__deltas));
+        var rootView = new views.RootView(this.__idSelector, this.__observableEntries, this.__values, this.__deltas);
+        this.__rootView = this.__addOpenViewReference(new AbstractDataSource.OpenViewKey(), rootView);
+
+        this.__size = ko.pureComputed(() => rootView.values().length);
     }
 
     ClientSideDataSource.prototype = {
+        get size() { return this.__size; },
+
         __addOpenViewReference: function (key, view) {
-            var ref = new OpenViewReference(key, view, () => this.__openViewReferences.splice(this.__openViewReferences.indexOf(ref), 1));
+            var ref = new AbstractDataSource.OpenViewReference(key, view, () => this.__openViewReferences.splice(this.__openViewReferences.indexOf(ref), 1));
             this.__openViewReferences.push(ref);
             return ref;
         },
         __increaseReferenceCountOrOpenNewView: function (key) {
             var existing = js.arrays.singleOrNull(this.__openViewReferences, v => key.equals(v.key));
 
-            if (existing) {
-                ++existing.referenceCount;
-                return existing;
-            } else {
+            if (existing)
+                return existing.addReference();
+            else {
                 var parentKey = key.reduceRank();
                 var parentView = js.arrays.single(this.__openViewReferences, v => parentKey.equals(v.key)).view;
                 var view = key.applyPrimaryTransformation(parentView);
@@ -62,7 +66,7 @@ define(function (require) {
         },
         openView: function (queryConfiguration) {
             var query = (queryConfiguration || (x => x))(new QueryConfigurator());
-            var key = OpenViewKey.fromQuery(query);
+            var key = AbstractDataSource.OpenViewKey.fromQuery(query);
 
             var internalViewRefs = key.allRanks().map(k => this.__increaseReferenceCountOrOpenNewView(k));
 
@@ -85,11 +89,7 @@ define(function (require) {
         streamValues: function (queryConfiguration) {
             var view = this.openView(queryConfiguration);
             try {
-                /** @type {?} */
-                var untypedValues = view.values;
-                /** @type {function():onefold.lists.List<?>} */
-                var values = untypedValues;
-                return Promise.resolve(new ListStream(values().slice()));
+                return Promise.resolve(new ListStream(view.values.peek().slice()));
             } finally {
                 view.dispose();
             }
@@ -98,11 +98,22 @@ define(function (require) {
             this.__values.updateAll(updatedEntries);
             new Delta([], updatedEntries).propagateTo(this.__deltas);
             this.__observableEntries.updateEntries(updatedEntries);
+        },
+
+        dispose: function () {
+            this.__rootView.releaseReference();
+
+            if (this.__openViewReferences.length) {
+                var views = this.__openViewReferences.length;
+                var referenceCount = this.__openViewReferences.reduce((c, r) => c + r.referenceCount, 0);
+                window.console.warn('Some views were not or are not yet disposed (' + views + ' views, ' + referenceCount + ' references).');
+            }
         }
-        // TODO implement dispose
     };
 
-    ClientSideDataSource.prototype = js.objects.extend({}, AbstractDataSource.prototype, ClientSideDataSource.prototype, {
+    ClientSideDataSource.prototype = js.objects.extend({}, AbstractDataSource.prototype, {
+        get 'size'() { return this.size; },
+
         'addEntries': ClientSideDataSource.prototype.addEntries,
         'dispose': ClientSideDataSource.prototype.dispose,
         'addOrUpdateEntries': ClientSideDataSource.prototype.addOrUpdateEntries,
@@ -111,96 +122,14 @@ define(function (require) {
         'replaceEntries': ClientSideDataSource.prototype.replaceEntries,
         'streamValues': ClientSideDataSource.prototype.streamValues,
         'updateEntries': ClientSideDataSource.prototype.updateEntries
-    });
+    }, ClientSideDataSource.prototype);
 
-    var TRUE = function () {return true; };
-    var ZERO = function () {return 0; };
-
-    /**
-     * @constructor
-     * @template V
-     *
-     * @param {(function(V):boolean|ko.Subscribable<function(V):boolean>)=} predicate
-     * @param {(function(V, V):number|ko.Subscribable<function(V, V):number>)=} comparator
-     * @param {(number|ko.Subscribable<number>)=} offset
-     * @param {(number|ko.Subscribable<number>)=} limit
-     */
-    function OpenViewKey(predicate, comparator, offset, limit) {
-        this.predicate = predicate || TRUE;
-        this.comparator = comparator || ZERO;
-        this.offset = offset || 0;
-        this.limit = limit || limit === 0 ? limit : Number.POSITIVE_INFINITY;
-
-        this.rank = Math.max(
-            this.predicate === TRUE ? 0 : 1,
-            this.comparator === ZERO ? 0 : 2,
-            this.offset === 0 && this.limit === Number.POSITIVE_INFINITY ? 0 : 3
-        );
-    }
-
-    OpenViewKey.fromQuery = function (query) {
-        return new OpenViewKey(query._predicate, query._comparator, query._offset, query._limit);
-    };
-
-    OpenViewKey.prototype = {
-        equals: function (other) {
-            return this.rank === other.rank
-                && this.predicate === other.predicate
-                && this.comparator === other.comparator
-                && this.offset === other.offset
-                && this.limit === other.limit;
-        },
-        reduceRank: function () {
-            if (this.rank <= 0)
-                throw new Error('Unsupported operation.');
-
-            var args = [null, this.predicate, this.comparator].slice(0, this.rank);
-            /** @type {function(new:OpenViewKey<V>)} */
-            var ReducedRankKeyConstructor = OpenViewKey.bind.apply(OpenViewKey, args);
-            return new ReducedRankKeyConstructor();
-        },
-        allRanks: function () {
-            return this.rank === 0 ? [this] : this.reduceRank().allRanks().concat([this]);
-        },
-        applyPrimaryTransformation: function (view) {
-            var accessor = [v => v.filteredBy, v => v.sortedBy, v => v.clipped][this.rank - 1];
-            var args = [[this.predicate], [this.comparator], [this.offset, this.limit]][this.rank - 1];
-
-            return accessor(view).apply(view, args);
-        }
-    };
-
-    /**
-     * @constructor
-     *
-     * @param key
-     * @param view
-     * @param disposer
-     */
-    function OpenViewReference(key, view, disposer) {
-        this.key = key;
-        this.view = view;
-        this.referenceCount = 1;
-        this.disposer = disposer;
-    }
-
-    OpenViewReference.prototype = {
-        addReference: function () {
-            if (this.referenceCount <= 0)
-                throw new Error('Assertion error: Reference count at `' + this.referenceCount + '`.');
-            ++this.referenceCount;
-        },
-        releaseReference: function () {
-            if (--this.referenceCount === 0) {
-                this.disposer();
-            }
-        }
-    };
+    var NO_DIRTY = ko.pureComputed(() => false);
 
     /**
      * @constructor
      * @template V, O
-     * @extends {View<V, O>}
+     * @extends {de.benshu.ko.dataSource.View<V, O>}
      *
      * @param internalView
      * @param internalViewRefs
@@ -208,11 +137,21 @@ define(function (require) {
     function InternalViewAdapter(internalView, internalViewRefs) {
         this.__internalView = internalView;
         this.__internalViewRefs = internalViewRefs;
+        this.__size = ko.pureComputed(() => internalView.values().length);
+        this.__filteredSize = ko.pureComputed(() => {
+            var filteredRef = js.arrays.singleOrNull(internalViewRefs, r => r.key.rank === AbstractDataSource.OpenViewKey.RANK_FILTERED)
+                || internalViewRefs[0];
+            return filteredRef.view.values().length;
+        });
     }
 
     InternalViewAdapter.prototype = {
-        get values() { return this.__internalView.values; },
+        get dirty() { return NO_DIRTY; },
+        get filteredSize() { return this.__filteredSize; },
+        get metadata() { return ko.pureComputed(() => ({})); },
         get observables() { return this.__internalView.observables; },
+        get size() { return this.__size; },
+        get values() { return this.__internalView.values; },
 
         dispose: function () {
             this.__internalViewRefs.forEach(r => {
@@ -222,8 +161,12 @@ define(function (require) {
     };
 
     InternalViewAdapter.prototype = js.objects.extend({
-        get 'values'() { return this.values; },
+        get 'dirty'() { return this.dirty; },
+        get 'filteredSize'() { return this.filteredSize; },
+        get 'metadata'() { return this.metadata; },
         get 'observables'() { return this.observables; },
+        get 'size'() { return this.size; },
+        get 'values'() { return this.values; },
 
         'dispose': InternalViewAdapter.prototype.dispose
     }, InternalViewAdapter.prototype);
