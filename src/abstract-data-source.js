@@ -4,9 +4,9 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
     /**
      * @constructor
      * @template I, V, O
-     * @extends {DataSource<I, V, O>}
+     * @extends {de.benshu.ko.dataSource.DataSource<I, V, O>}
      *
-     * @param {!ObservableEntries<I, V, O>} observableEntries
+     * @param {!de.benshu.ko.dataSource.ObservableEntries<I, V, O>} observableEntries
      * @param {!function(I):V} getValueById
      */
     function AbstractDataSource(observableEntries, getValueById) {
@@ -46,9 +46,9 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
     /**
      * @constructor
      * @template V, O
-     * @extends {EntryView<V, O>}
+     * @extends {de.benshu.ko.dataSource.EntryView<V, O>}
      *
-     * @param {OptionalEntryView<V, O>} optionalEntryView
+     * @param {de.benshu.ko.dataSource.OptionalEntryView<V, O>} optionalEntryView
      */
     function DefaultEntryView(optionalEntryView) {
         this.__optionalEntryView = optionalEntryView;

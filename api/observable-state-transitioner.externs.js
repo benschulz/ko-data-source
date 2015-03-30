@@ -2,23 +2,23 @@
  * @constructor
  * @template V, O
  */
-function ObservableStateTransitioner() {}
+de.benshu.ko.dataSource.ObservableStateTransitioner = function () {};
 
 /**
  * @param {V} value
  * @returns {O}
  */
-ObservableStateTransitioner.prototype.constructor = function (value) {};
+de.benshu.ko.dataSource.ObservableStateTransitioner.prototype.constructor = function (value) {};
 
 /**
  * @param {O} observable
  * @param {V} updatedValue
  * @returns {O}
  */
-ObservableStateTransitioner.prototype.updater = function (observable, updatedValue) {};
+de.benshu.ko.dataSource.ObservableStateTransitioner.prototype.updater = function (observable, updatedValue) {};
 
 /**
  * @param {O} observable
  * @returns {undefined}
  */
-ObservableStateTransitioner.prototype.destructor = function (observable) {};
+de.benshu.ko.dataSource.ObservableStateTransitioner.prototype.destructor = function (observable) {};

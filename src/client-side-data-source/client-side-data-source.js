@@ -15,7 +15,7 @@ define(function (require) {
     /**
      * @constructor
      * @template I, V, O
-     * @extends {DataSource<I, V, O>}
+     * @extends {de.benshu.ko.dataSource.DataSource<I, V, O>}
      */
     function ClientSideDataSource(idSelector, observableEntries) {
         var values = new IndexedList(idSelector);

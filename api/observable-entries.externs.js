@@ -3,6 +3,6 @@
  * @template I, V, O
  *
  * @param {function(V):I} idSelector
- * @param {ObservableStateTransitioner<V, O>} observableStateTransitioner
+ * @param {de.benshu.ko.dataSource.ObservableStateTransitioner<V, O>} observableStateTransitioner
  */
-function ObservableEntries(idSelector, observableStateTransitioner) {}
+de.benshu.ko.dataSource.ObservableEntries = function(idSelector, observableStateTransitioner) {};

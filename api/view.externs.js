@@ -2,19 +2,34 @@
  * @constructor
  * @template V, O
  */
-function View() {}
+de.benshu.ko.dataSource.View = function() {};
 
 /**
- * @type {!ko.Subscribable<onefold.lists.List<V>>}
+ * @type {ko.Subscribable<boolean>}
  */
-View.prototype.values;
+de.benshu.ko.dataSource.View.prototype.dirty;
+
+/**
+ * @type {ko.Subscribable<number>}
+ */
+de.benshu.ko.dataSource.View.prototype.filteredSize;
 
 /**
  * @type {!ko.Subscribable<onefold.lists.List<O>>}
  */
-View.prototype.observables;
+de.benshu.ko.dataSource.View.prototype.observables;
+
+/**
+ * @type {!ko.Subscribable<onefold.lists.List<V>>}
+ */
+de.benshu.ko.dataSource.View.prototype.values;
+
+/**
+ * @type {ko.Subscribable<number>}
+ */
+de.benshu.ko.dataSource.View.prototype.size;
 
 /**
  * @returns {undefined}
  */
-View.prototype.dispose = function () {};
+de.benshu.ko.dataSource.View.prototype.dispose = function () {};

@@ -1,40 +1,47 @@
+
+
 /**
  * @constructor
  * @template I, V, O
  */
-function DataSource() {}
+de.benshu.ko.dataSource.DataSource = function () {};
+
+/**
+ * @type {ko.Subscribable<number>}
+ */
+de.benshu.ko.dataSource.DataSource.prototype.size;
 
 /**
  * @param {I} entryId
- * @returns {!EntryView<V, O>}
+ * @returns {!de.benshu.ko.dataSource.EntryView<V, O>}
  */
-DataSource.prototype.openEntryView = function (entryId) {};
+de.benshu.ko.dataSource.DataSource.prototype.openEntryView = function (entryId) {};
 
 /**
  * @param {I} entryId
- * @returns {!OptionalEntryView<V, O>}
+ * @returns {!de.benshu.ko.dataSource.OptionalEntryView<V, O>}
  */
-DataSource.prototype.openOptionalEntryView = function (entryId) {};
+de.benshu.ko.dataSource.DataSource.prototype.openOptionalEntryView = function (entryId) {};
 
 /**
- * @param {function(QueryConfigurator<V>):Query<V>} queryConfiguration
- * @returns {!View<V, O>}
+ * @param {function(de.benshu.ko.dataSource.QueryConfigurator<V>):de.benshu.ko.dataSource.Query<V>} queryConfiguration
+ * @returns {!de.benshu.ko.dataSource.View<V, O>}
  */
-DataSource.prototype.openView = function (queryConfiguration) {};
+de.benshu.ko.dataSource.DataSource.prototype.openView = function (queryConfiguration) {};
 
 /**
- * @param {function(QueryConfigurator<V>):Query<V>} queryConfiguration
- * @returns {!Promise<Stream<O>>}
+ * @param {function(de.benshu.ko.dataSource.QueryConfigurator<V>):de.benshu.ko.dataSource.Query<V>} queryConfiguration
+ * @returns {!Promise<de.benshu.ko.dataSource.streams.Stream<O>>}
  */
-DataSource.prototype.streamObservables = function (queryConfiguration) {};
+de.benshu.ko.dataSource.DataSource.prototype.streamObservables = function (queryConfiguration) {};
 
 /**
- * @param {function(QueryConfigurator<V>):Query<V>} queryConfiguration
- * @returns {!Promise<Stream<V>>}
+ * @param {function(de.benshu.ko.dataSource.QueryConfigurator<V>):de.benshu.ko.dataSource.Query<V>} queryConfiguration
+ * @returns {!Promise<de.benshu.ko.dataSource.streams.Stream<V>>}
  */
-DataSource.prototype.streamValues = function (queryConfiguration) {};
+de.benshu.ko.dataSource.DataSource.prototype.streamValues = function (queryConfiguration) {};
 
 /**
  * @returns {undefined}
  */
-DataSource.prototype.dispose = function (queryConfiguration) {};
+de.benshu.ko.dataSource.DataSource.prototype.dispose = function (queryConfiguration) {};

@@ -2,63 +2,63 @@
  * @constructor
  * @template V
  */
-function Query() {}
+de.benshu.ko.dataSource.Query = function () {};
 
 /**
  * @constructor
  * @template V
- * @extends {Query<V>}
+ * @extends {de.benshu.ko.dataSource.Query<V>}
  */
-function LimitableQueryConfigurator() {}
+de.benshu.ko.dataSource.LimitableQueryConfigurator = function () {};
 
 /**
  * @param limit
- * @returns {Query<V>}
+ * @returns {de.benshu.ko.dataSource.Query<V>}
  */
-LimitableQueryConfigurator.prototype.limitedTo = function (limit) {};
+de.benshu.ko.dataSource.LimitableQueryConfigurator.prototype.limitedTo = function (limit) {};
 
 /**
  * @constructor
  * @template V
- * @extends {LimitableQueryConfigurator<V>}
+ * @extends {de.benshu.ko.dataSource.LimitableQueryConfigurator<V>}
  */
-function OffsettableQueryConfigurator() {}
+de.benshu.ko.dataSource.OffsettableQueryConfigurator = function () {};
 
 /**
  * @param offset
- * @returns {FilterableQueryConfigurator<V>}
+ * @returns {de.benshu.ko.dataSource.FilterableQueryConfigurator<V>}
  */
-OffsettableQueryConfigurator.prototype.offsetBy = function (offset) {};
+de.benshu.ko.dataSource.OffsettableQueryConfigurator.prototype.offsetBy = function (offset) {};
 
 /**
  * @constructor
  * @template V
- * @extends {OffsettableQueryConfigurator<V>}
+ * @extends {de.benshu.ko.dataSource.OffsettableQueryConfigurator<V>}
  */
-function SortableQueryConfigurator() {}
+de.benshu.ko.dataSource.SortableQueryConfigurator = function () {};
 
 /**
  * @param comparator
- * @returns {OffsettableQueryConfigurator<V>}
+ * @returns {de.benshu.ko.dataSource.OffsettableQueryConfigurator<V>}
  */
-SortableQueryConfigurator.prototype.sortedBy = function (comparator) {};
+de.benshu.ko.dataSource.SortableQueryConfigurator.prototype.sortedBy = function (comparator) {};
 
 /**
  * @constructor
  * @template V
- * @extends {SortableQueryConfigurator<V>}
+ * @extends {de.benshu.ko.dataSource.SortableQueryConfigurator<V>}
  */
-function FilterableQueryConfigurator() {}
+de.benshu.ko.dataSource.FilterableQueryConfigurator = function () {};
 
 /**
  * @param predicate
- * @returns {FilterableQueryConfigurator<V>}
+ * @returns {de.benshu.ko.dataSource.FilterableQueryConfigurator<V>}
  */
-FilterableQueryConfigurator.prototype.filteredBy = function (predicate) {};
+de.benshu.ko.dataSource.FilterableQueryConfigurator.prototype.filteredBy = function (predicate) {};
 
 /**
  * @constructor
  * @template V
- * @extends {FilterableQueryConfigurator<V>}
+ * @extends {de.benshu.ko.dataSource.FilterableQueryConfigurator<V>}
  */
-function QueryConfigurator() {}
+de.benshu.ko.dataSource.QueryConfigurator = function () {};

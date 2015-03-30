@@ -1,27 +1,27 @@
 /**
  * @constructor
  * @template V, O
- * @extends {EntryView<V, O>}
+ * @extends {de.benshu.ko.dataSource.EntryView<V, O>}
  */
-function OptionalEntryView() {}
+de.benshu.ko.dataSource.OptionalEntryView = function () {};
 
 /**
  * @type {ko.Subscribable<OptionalObservable<O>>}
  */
-OptionalEntryView.prototype.optionalObservable;
+de.benshu.ko.dataSource.OptionalEntryView.prototype.optionalObservable;
 
 /**
  * @constructor
  * @template O
  */
-function OptionalObservable() {}
+de.benshu.ko.dataSource.OptionalEntryView.OptionalObservable = function () {};
 
 /**
  * @type {boolean}
  */
-OptionalObservable.prototype.present;
+de.benshu.ko.dataSource.OptionalEntryView.OptionalObservable.prototype.present;
 
 /**
  * @type {O}
  */
-OptionalObservable.prototype.observable;
+de.benshu.ko.dataSource.OptionalEntryView.OptionalObservable.prototype.observable;

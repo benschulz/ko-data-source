@@ -4,9 +4,9 @@ define(['onefold-js'], function (js) {
     /**
      * @constructor
      * @template D, I
-     * @extends Stream<I>
+     * @extends {de.benshu.ko.dataSource.streams.Stream<I>}
      *
-     * @param {!Stream<D>} sourceStream
+     * @param {!de.benshu.ko.dataSource.streams.Stream<D>} sourceStream
      * @param {function(D):I} mapper
      * @param {function(I)=} closer
      */

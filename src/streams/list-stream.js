@@ -4,7 +4,7 @@ define(['onefold-js', './mapped-stream'], function (js, MappedStream) {
     /**
      * @constructor
      * @template T
-     * @extends Stream<T>
+     * @extends {de.benshu.ko.dataSource.streams.Stream<T>}
      */
     function ListStream(list) {
         this.__list = list;

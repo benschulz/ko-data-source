@@ -2,19 +2,19 @@
  * @constructor
  * @template V, O
  */
-function EntryView() {}
+de.benshu.ko.dataSource.EntryView = function () {};
 
 /**
  * @type {V}
  */
-EntryView.prototype.value;
+de.benshu.ko.dataSource.EntryView.prototype.value;
 
 /**
  * @type {O}
  */
-EntryView.prototype.observable;
+de.benshu.ko.dataSource.EntryView.prototype.observable;
 
 /**
  * @returns {undefined}
  */
-EntryView.prototype.dispose = function () {};
+de.benshu.ko.dataSource.EntryView.prototype.dispose = function () {};
