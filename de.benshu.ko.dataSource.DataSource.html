@@ -466,6 +466,8 @@
     </div>
 
     
+    <p class="summary">Represents a collection of similarly shaped objects (e.g. a collection of users).</p>
+    
 </dt>
 <dd>
     
@@ -540,8 +542,15 @@
     </div>
     
     
+    <p class="summary">The size of the data source.</p>
+    
 </dt>
 <dd>
+    
+    <div class="description">
+        <p>The size of the data source.</p>
+<p>The size is updated whenever possible. For remote data sources this translates into <em>whenever a view is updated</em>.</p>
+    </div>
     
     
     
@@ -593,6 +602,8 @@
         
     </div>
 
+    
+    <p class="summary">Disposes of this data source.</p>
     
 </dt>
 <dd>
@@ -664,9 +675,15 @@
     </div>
 
     
+    <p class="summary">Opens an entry view for the entry with the specified id.</p>
+    
 </dt>
 <dd>
     
+    
+    <div class="description">
+        <p>Use <code>openOptionalEntryView</code> if the element can vanish from the data source while the view is open.</p>
+    </div>
     
 
     
@@ -779,9 +796,16 @@
     </div>
 
     
+    <p class="summary">Opens an optional entry view for the entry with the specified id.</p>
+    
 </dt>
 <dd>
     
+    
+    <div class="description">
+        <p>The <em>optional</em>-part allows for the entry to drop out of the data source while the view is open.
+It does not mean that the entry can be absent from the data source when this method is called.</p>
+    </div>
     
 
     
@@ -894,6 +918,8 @@
     </div>
 
     
+    <p class="summary">Opens a view of the entries in this data source.</p>
+    
 </dt>
 <dd>
     
@@ -942,7 +968,7 @@
             
             <td class="description last">
                 
-                </td>
+                <p>A configuration of the view to be returned.</p></td>
         </tr>
 	
 	
@@ -1008,6 +1034,8 @@
         
     </div>
 
+    
+    <p class="summary">Promises a stream of entry observables.</p>
     
 </dt>
 <dd>
@@ -1123,6 +1151,8 @@
         
     </div>
 
+    
+    <p class="summary">Promises a stream of entry values.</p>
     
 </dt>
 <dd>
