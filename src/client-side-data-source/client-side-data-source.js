@@ -10,14 +10,17 @@ define(function (require) {
         Delta = require('./delta'),
         IndexedList = require('indexed-list'),
         ListStream = require('../streams/list-stream'),
+        ObservableEntries = require('../observable-entries'),
         QueryConfigurator = require('../queries/query-configurator');
 
     /**
      * @constructor
      * @template I, V, O
-     * @extends {de.benshu.ko.dataSource.DataSource<I, V, O>}
+     * @extends {AbstractDataSource<I, V, O>}
      */
     function ClientSideDataSource(idSelector, observableEntries) {
+        observableEntries = observableEntries || new ObservableEntries(idSelector);
+
         var values = new IndexedList(idSelector);
 
         AbstractDataSource.call(this, observableEntries, entryId => values.getById(entryId));
@@ -58,11 +61,16 @@ define(function (require) {
         addEntries: function (newEntries) {
             this.__values.addAll(newEntries);
             new Delta(newEntries).propagateTo(this.__deltas);
+            this.__observableEntries.reconstructEntries(newEntries);
         },
         addOrUpdateEntries: function (entries) {
             var added = [], updated = [];
-            entries.forEach(entry => (this.__values.contains(entry) ? updated : added).push());
+            entries.forEach(entry => (this.__values.contains(entry) ? updated : added).push(entry));
+            this.__values.addAll(added);
+            this.__values.updateAll(updated);
             new Delta(added, updated).propagateTo(this.__deltas);
+            this.__observableEntries.reconstructEntries(added);
+            this.__observableEntries.updateEntries(updated);
         },
         openView: function (queryConfiguration) {
             var query = (queryConfiguration || (x => x))(new QueryConfigurator());
@@ -77,14 +85,14 @@ define(function (require) {
         removeEntries: function (entries) {
             this.__values.removeAll(entries);
             new Delta([], [], entries).propagateTo(this.__deltas);
+            this.__observableEntries.destroyAll(id => !this.__values.containsById(id));
         },
         replaceEntries: function (newEntries) {
             var removedEntries = this.__values.toArray();
             this.__values.clear();
             this.__values.addAll(newEntries);
             new Delta(newEntries, [], removedEntries).propagateTo(this.__deltas);
-            // TODO update only those that were already there before the delta was propagated
-            this.__observableEntries.updateEntries(newEntries);
+            this.__observableEntries.reconstructUpdateOrDestroyAll(id => this.__values.tryGetById(id));
         },
         streamValues: function (queryConfiguration) {
             var view = this.openView(queryConfiguration);
@@ -102,6 +110,7 @@ define(function (require) {
 
         dispose: function () {
             this.__rootView.releaseReference();
+            this.__observableEntries.dispose();
 
             if (this.__openViewReferences.length) {
                 var views = this.__openViewReferences.length;

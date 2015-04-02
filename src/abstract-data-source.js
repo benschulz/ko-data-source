@@ -10,8 +10,8 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
      * @param {!function(I):V} getValueById
      */
     function AbstractDataSource(observableEntries, getValueById) {
-        this.__getValueById = getValueById;
         this.__observableEntries = observableEntries;
+        this.__getValueById = getValueById;
     }
 
     AbstractDataSource.prototype = {
@@ -36,12 +36,11 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
         dispose: function () { throw new Error('`' + this.constructor + '` does not implement `dispose`.'); }
     };
 
-    var proto = AbstractDataSource.prototype;
-    js.objects.extend(proto, {
-        'openEntryView': proto.openEntryView,
-        'openOptionalEntryView': proto.openOptionalEntryView,
-        'streamObservables': proto.streamObservables
-    });
+    AbstractDataSource.prototype = js.objects.extend({}, {
+        'openEntryView': AbstractDataSource.prototype.openEntryView,
+        'openOptionalEntryView': AbstractDataSource.prototype.openOptionalEntryView,
+        'streamObservables': AbstractDataSource.prototype.streamObservables
+    }, AbstractDataSource.prototype);
 
     /**
      * @constructor
@@ -72,6 +71,12 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
             this.__optionalEntryView.dispose();
         }
     };
+
+    DefaultEntryView.prototype = js.objects.extend({}, {
+        get 'value'() { return this.value; },
+        get 'observable'() { return this.observable; },
+        'dispose': DefaultEntryView.prototype.dispose
+    }, DefaultEntryView.prototype);
 
     /**
      * @constructor
@@ -112,18 +117,18 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
             if (this.__optionalObservable)
                 return this.__optionalObservable;
 
-            var sharedObservable = this.__observableEntries.addOptionalReference(this.value());
+            var sharedObservable = this.__observableEntries.addOptionalReference(this.value);
 
             this.__observable = sharedObservable();
             this.__optionalObservable = ko.observable({
-                present: true,
-                observable: this.observable()
+                'present': true,
+                'observable': this.__observable
             });
 
-            this.__subscription = sharedObservable.subscribe(() => {
+            this.__subscription = sharedObservable.subscribe(observable => {
                 this.__optionalObservable({
-                    present: false,
-                    observable: this.observable()
+                    'present': !!observable,
+                    'observable': observable
                 });
             });
 
@@ -140,6 +145,13 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
             }
         }
     };
+
+    DefaultOptionalEntryView.prototype = js.objects.extend({}, {
+        get 'value'() { return this.value; },
+        get 'observable'() { return this.observable; },
+        get 'optionalObservable'() { return this.optionalObservable; },
+        'dispose': DefaultOptionalEntryView.prototype.dispose
+    }, DefaultOptionalEntryView.prototype);
 
     var TRUE = function () {return true; };
     var ZERO = function () {return 0; };

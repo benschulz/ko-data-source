@@ -2,9 +2,7 @@
 
 define(['ko-data-source'], function (koDataSource) {
     return function (initialEntries) {
-        var idSelector = function (x) { return '' + x; };
-        var observableEntries = new koDataSource.ObservableEntries(idSelector);
-        var dataSource = new koDataSource.ClientSideDataSource(idSelector, observableEntries);
+        var dataSource = new koDataSource.ClientSideDataSource(e =>  e.id || '' + e);
 
         if (initialEntries)
             dataSource.addEntries(initialEntries);

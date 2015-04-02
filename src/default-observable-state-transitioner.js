@@ -7,10 +7,10 @@ define(['knockout'], function (ko) {
             isNonObservableProperty[property] = true;
         });
 
-        this.constructor = function (entry) {
+        this.constructor = entry => {
             var observable = {};
 
-            Object.keys(entry).forEach(function (p) {
+            Object.keys(entry).forEach(p => {
                 if (isNonObservableProperty[p])
                     observable[p] = entry[p];
                 else
@@ -19,15 +19,13 @@ define(['knockout'], function (ko) {
 
             return observable;
         };
-        this.updater = function (observable, updatedEntry) {
+        this.updater = (observable, updatedEntry) => {
             Object.keys(updatedEntry)
                 .filter(p => !isNonObservableProperty[p])
-                .forEach(function (p) {
-                    observable[p](updatedEntry[p]);
-                });
+                .forEach(p => observable[p](updatedEntry[p]));
 
             return observable;
         };
-        this.destructor = function () {};
+        this.destructor = () => {};
     };
 });

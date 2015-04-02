@@ -1,5 +1,6 @@
 'use strict';
-define(['knockout'], function (ko) {
+
+define(['knockout', 'onefold-js', './default-observable-state-transitioner'], function (ko, js, DefaultObservableStateTransitioner) {
     /** @constructor */
     function ObservableEntry(observable) {
         this.observable = observable;
@@ -7,24 +8,9 @@ define(['knockout'], function (ko) {
         this.refcount = 1;
     }
 
-    // TODO reduce interface to minimum (addReference, addOptionalReference, releaseReference, updateEntries, dispose, ...?)
+    // TODO clean up extract prototype
     return function ObservableEntries(idSelector, observableStateTransitioner) {
-        observableStateTransitioner = observableStateTransitioner || {
-            constructor: function (entry) {
-                var observable = {};
-                Object.keys(entry).forEach(function (k) {
-                    observable[k] = ko.observable(entry[k]);
-                });
-                return observable;
-            },
-            updater: function (observable, updatedEntry) {
-                Object.keys(updatedEntry).forEach(function (k) {
-                    observable[k](updatedEntry[k]);
-                });
-                return observable;
-            },
-            destructor: function () {}
-        };
+        observableStateTransitioner = observableStateTransitioner || new DefaultObservableStateTransitioner();
 
         var hashtable = {};
 
@@ -65,52 +51,67 @@ define(['knockout'], function (ko) {
             }
         };
 
-        this.forcefullyReleaseRemainingReferencesById = function (id) {
-            var entry = lookupEntry(id);
-            entry.optionalObservable(null);
-            observableStateTransitioner.destructor(entry.observable);
-            delete hashtable[id];
-        };
-
         this.lookup = value => lookupEntry(idSelector(value)).observable;
 
-        this.withById = (id, action) => action(lookupEntry(id).observable);
+        this.reconstructEntries = addedEntries => {
+            addedEntries.forEach(addedEntry => {
+                var id = idSelector(addedEntry);
 
-        this.with = (value, action) => this.withById(idSelector(value), action);
-
-        this.withPresentById = function (id, action) {
-            var entry = tryLookupEntry(id);
-            if (entry)
-                action(entry.observable);
-        };
-
-        this.withPresent = (value, action) => this.withPresentById(idSelector(value), action);
-
-        this.updateEntries = updatedEntries => {
-            updatedEntries.forEach(updatedEntry => {
-                this.withPresent(updatedEntry, observable => {
-                    observableStateTransitioner.updater(observable, updatedEntry);
-                });
+                if (js.objects.hasOwn(hashtable, id)) {
+                    var entry = hashtable[id];
+                    entry.observable = observableStateTransitioner.constructor(addedEntry);
+                    entry.optionalObservable(entry.observable);
+                }
             });
         };
 
-        this.dispose = () => {
-            Object.keys(hashtable).forEach(this.forcefullyReleaseRemainingReferencesById);
+        this.updateEntries = updatedEntries => {
+            updatedEntries.forEach(updatedEntry => {
+                var id = idSelector(updatedEntry);
+
+                if (js.objects.hasOwn(hashtable, id)) {
+                    var entry = hashtable[id];
+                    observableStateTransitioner.updater(entry.observable, updatedEntry);
+                }
+            });
         };
 
-        var tryLookupEntry = function (id) {
-            if (typeof id !== 'string')
-                throw newInvalidIdTypeError(id);
-            if (!Object.prototype.hasOwnProperty.call(hashtable, id))
-                return null;
-            return hashtable[id];
+        this.reconstructUpdateOrDestroyAll = updatedValueSupplier => {
+            js.objects.forEachProperty(hashtable, (id, entry) => {
+                var updatedValue = updatedValueSupplier(id);
+
+                if (updatedValue) {
+                    if (entry.observable) {
+                        observableStateTransitioner.updater(entry.observable, updatedValue);
+                    } else {
+                        entry.observable = observableStateTransitioner.constructor(updatedValue);
+                        entry.optionalObservable(entry.observable);
+                    }
+                } else {
+                    entry.optionalObservable(null);
+                    observableStateTransitioner.destructor(entry.observable);
+                }
+            });
         };
+
+        this.destroyAll = idPredicate => {
+            js.objects.forEachProperty(hashtable, (id, entry) => {
+                if (idPredicate(id)) {
+                    entry.optionalObservable(null);
+                    observableStateTransitioner.destructor(entry.observable);
+                }
+            });
+        };
+
+        this.dispose = () => { this.destroyAll(() => true); };
 
         var lookupEntry = function (id) {
-            var entry = tryLookupEntry(id);
-            if (!entry)
-                throw new Error('Es existierte keine Referenz zum Objekt mit Id \'' + id + '\' oder es wurden bereits alle freigegeben.');
-            return entry;
+            if (typeof id !== 'string')
+                throw newInvalidIdTypeError(id);
+            if (js.objects.hasOwn(hashtable, id))
+                return hashtable[id];
+            else
+                throw new Error('No entry for id `' + id + '`.');
         };
     };
 });

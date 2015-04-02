@@ -6,6 +6,7 @@ define(function (require) {
         lists = require('onefold-lists'),
     //
         AbstractDataSource = require('../abstract-data-source'),
+        ObservableEntries = require('../observable-entries'),
         QueryConfigurator = require('../queries/query-configurator');
 
     var hasOwn = js.objects.hasOwn;
@@ -13,9 +14,11 @@ define(function (require) {
     /**
      * @constructor
      * @template I, V, O
-     * @extends {de.benshu.ko.dataSource.DataSource<I, V, O>}
+     * @extends {AbstractDataSource<I, V, O>}
      */
-    function ServerSideDataSource(idSelector, observableEntries, querier) {
+    function ServerSideDataSource(idSelector, querier, observableEntries) {
+        observableEntries = observableEntries || new ObservableEntries(idSelector);
+
         var values = {};
 
         AbstractDataSource.call(this, observableEntries, entryId => {
@@ -83,6 +86,7 @@ define(function (require) {
         },
 
         dispose: function () {
+            this.__observableEntries.dispose();
             if (this.__openViewReferences.length) {
                 var views = this.__openViewReferences.length;
                 var referenceCount = this.__openViewReferences.reduce((c, r) => c + r.referenceCount, 0);
@@ -110,6 +114,7 @@ define(function (require) {
      */
     function ServerSideView(dataSource, query, disposer) {
         var requestPending = ko.observable(false);
+        var dirty = ko.observable(false);
         var metadata = ko.observable({'unfilteredSize': dataSource.size.peek(), 'filteredSize': 0});
 
         var previousValues = lists.newArrayList();
@@ -119,6 +124,7 @@ define(function (require) {
             if (requestPending.peek())
                 return requestPending();
 
+            dirty(true);
             requestPending(true);
 
             var q = query.unwrapArguments().normalize();
@@ -137,7 +143,12 @@ define(function (require) {
                         dataSource.__size(r['unfilteredSize']);
                         metadata(r);
                     })
-                    .then(() => requestPending(false), () => requestPending(false));
+                    .then(() => {
+                        dirty(false);
+                        requestPending(false);
+                    }, () => {
+                        requestPending(false);
+                    });
             }); // TODO maybe the user wants to specify a delay > 0 ?
         });
 
@@ -179,7 +190,7 @@ define(function (require) {
         });
         this.__observables.subscribe(() => observablesList = null, null, 'asleep');
 
-        this.__dirty = ko.pureComputed(() => requestPending());
+        this.__dirty = ko.pureComputed(() => dirty());
 
         this.__metadata = ko.pureComputed(() => metadata());
         this.__filteredSize = ko.pureComputed(() => metadata()['filteredSize']);

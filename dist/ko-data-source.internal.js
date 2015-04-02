@@ -2,8 +2,8 @@
  * Copyright (c) 2015, Ben Schulz
  * License: BSD 3-clause (http://opensource.org/licenses/BSD-3-Clause)
  */
-define(['indexed-list', 'onefold-lists', 'onefold-js', 'knockout'],    function(indexed_list, onefold_lists, onefold_js, knockout) {
-var ko_data_source_client_side_data_source_delta, ko_data_source_client_side_data_source_views_subviews, ko_data_source_client_side_data_source_views_abstract_view, ko_data_source_client_side_data_source_views_root_view, ko_data_source_client_side_data_source_views_filtered_view, ko_data_source_client_side_data_source_views_sorted_view, ko_data_source_client_side_data_source_views_clipped_view, ko_data_source_client_side_data_source_views_views, ko_data_source_streams_mapped_stream, ko_data_source_abstract_data_source, ko_data_source_streams_list_stream, ko_data_source_queries_query, ko_data_source_queries_limitable_query_configurator, ko_data_source_queries_offsettable_query_configurator, ko_data_source_queries_sortable_query_configurator, ko_data_source_queries_filterable_query_configurator, ko_data_source_queries_query_configurator, ko_data_source_client_side_data_source_client_side_data_source, ko_data_source_default_observable_state_transitioner, ko_data_source_observable_entries, ko_data_source_server_side_data_source_server_side_data_source, ko_data_source_streams_streams, ko_data_source_ko_data_source, ko_data_source;
+define(['indexed-list', 'stringifyable', 'onefold-lists', 'onefold-js', 'knockout'],    function(indexed_list, stringifyable, onefold_lists, onefold_js, knockout) {
+var ko_data_source_client_side_data_source_delta, ko_data_source_client_side_data_source_views_subviews, ko_data_source_client_side_data_source_views_abstract_view, ko_data_source_client_side_data_source_views_root_view, ko_data_source_client_side_data_source_views_filtered_view, ko_data_source_client_side_data_source_views_sorted_view, ko_data_source_client_side_data_source_views_clipped_view, ko_data_source_client_side_data_source_views_views, ko_data_source_streams_mapped_stream, ko_data_source_abstract_data_source, ko_data_source_streams_list_stream, ko_data_source_default_observable_state_transitioner, ko_data_source_observable_entries, ko_data_source_queries_query, ko_data_source_queries_limitable_query_configurator, ko_data_source_queries_offsettable_query_configurator, ko_data_source_queries_sortable_query_configurator, ko_data_source_queries_filterable_query_configurator, ko_data_source_queries_query_configurator, ko_data_source_client_side_data_source_client_side_data_source, ko_data_source_server_side_data_source_server_side_data_source, ko_data_source_streams_streams, ko_data_source_ko_data_source, ko_data_source;
 
 ko_data_source_client_side_data_source_delta = function () {
   function Delta(added, updated, removed) {
@@ -349,8 +349,8 @@ ko_data_source_abstract_data_source = function (ko, js, MappedResource) {
    * @param {!function(I):V} getValueById
    */
   function AbstractDataSource(observableEntries, getValueById) {
-    this.__getValueById = getValueById;
     this.__observableEntries = observableEntries;
+    this.__getValueById = getValueById;
   }
   AbstractDataSource.prototype = {
     openEntryView: function (entryId) {
@@ -374,12 +374,11 @@ ko_data_source_abstract_data_source = function (ko, js, MappedResource) {
       throw new Error('`' + this.constructor + '` does not implement `dispose`.');
     }
   };
-  var proto = AbstractDataSource.prototype;
-  js.objects.extend(proto, {
-    'openEntryView': proto.openEntryView,
-    'openOptionalEntryView': proto.openOptionalEntryView,
-    'streamObservables': proto.streamObservables
-  });
+  AbstractDataSource.prototype = js.objects.extend({}, {
+    'openEntryView': AbstractDataSource.prototype.openEntryView,
+    'openOptionalEntryView': AbstractDataSource.prototype.openOptionalEntryView,
+    'streamObservables': AbstractDataSource.prototype.streamObservables
+  }, AbstractDataSource.prototype);
   /**
    * @constructor
    * @template V, O
@@ -409,6 +408,15 @@ ko_data_source_abstract_data_source = function (ko, js, MappedResource) {
       this.__optionalEntryView.dispose();
     }
   };
+  DefaultEntryView.prototype = js.objects.extend({}, {
+    get 'value'() {
+      return this.value;
+    },
+    get 'observable'() {
+      return this.observable;
+    },
+    'dispose': DefaultEntryView.prototype.dispose
+  }, DefaultEntryView.prototype);
   /**
    * @constructor
    * @template I, V, O
@@ -445,16 +453,16 @@ ko_data_source_abstract_data_source = function (ko, js, MappedResource) {
       this.__assertNotDisposed();
       if (this.__optionalObservable)
         return this.__optionalObservable;
-      var sharedObservable = this.__observableEntries.addOptionalReference(this.value());
+      var sharedObservable = this.__observableEntries.addOptionalReference(this.value);
       this.__observable = sharedObservable();
       this.__optionalObservable = ko.observable({
-        present: true,
-        observable: this.observable()
+        'present': true,
+        'observable': this.__observable
       });
-      this.__subscription = sharedObservable.subscribe(function () {
+      this.__subscription = sharedObservable.subscribe(function (observable) {
         this.__optionalObservable({
-          present: false,
-          observable: this.observable()
+          'present': !!observable,
+          'observable': observable
         });
       }.bind(this));
       return this.__optionalObservable;
@@ -469,6 +477,18 @@ ko_data_source_abstract_data_source = function (ko, js, MappedResource) {
       }
     }
   };
+  DefaultOptionalEntryView.prototype = js.objects.extend({}, {
+    get 'value'() {
+      return this.value;
+    },
+    get 'observable'() {
+      return this.observable;
+    },
+    get 'optionalObservable'() {
+      return this.optionalObservable;
+    },
+    'dispose': DefaultOptionalEntryView.prototype.dispose
+  }, DefaultOptionalEntryView.prototype);
   var TRUE = function () {
     return true;
   };
@@ -603,7 +623,142 @@ ko_data_source_streams_list_stream = function (js, MappedStream) {
   return ListStream;
 }(onefold_js, ko_data_source_streams_mapped_stream);
 
-ko_data_source_queries_query = function (ko, js) {
+ko_data_source_default_observable_state_transitioner = function (ko) {
+  return function DefaultObservableStateTransitioner() {
+    var isNonObservableProperty = {};
+    Array.prototype.slice.call(arguments).forEach(function (property) {
+      isNonObservableProperty[property] = true;
+    });
+    this.constructor = function (entry) {
+      var observable = {};
+      Object.keys(entry).forEach(function (p) {
+        if (isNonObservableProperty[p])
+          observable[p] = entry[p];
+        else
+          observable[p] = ko.observable(entry[p]);
+      });
+      return observable;
+    };
+    this.updater = function (observable, updatedEntry) {
+      Object.keys(updatedEntry).filter(function (p) {
+        return !isNonObservableProperty[p];
+      }).forEach(function (p) {
+        return observable[p](updatedEntry[p]);
+      });
+      return observable;
+    };
+    this.destructor = function () {
+    };
+  };
+}(knockout);
+
+ko_data_source_observable_entries = function (ko, js, DefaultObservableStateTransitioner) {
+  /** @constructor */
+  function ObservableEntry(observable) {
+    this.observable = observable;
+    this.optionalObservable = ko.observable(observable);
+    this.refcount = 1;
+  }
+  // TODO clean up extract prototype
+  return function ObservableEntries(idSelector, observableStateTransitioner) {
+    observableStateTransitioner = observableStateTransitioner || new DefaultObservableStateTransitioner();
+    var hashtable = {};
+    var newInvalidIdTypeError = function (id) {
+      throw new Error('Illegal argument: Ids must be strings (\'' + id + '\' is of type \'' + typeof id + '\').');
+    };
+    this.addReference = function (value) {
+      return addAnyReference(value).observable;
+    };
+    this.addOptionalReference = function (value) {
+      return addAnyReference(value).optionalObservable;
+    };
+    var addAnyReference = function (value) {
+      var id = idSelector(value);
+      if (typeof id !== 'string')
+        throw newInvalidIdTypeError(id);
+      return Object.prototype.hasOwnProperty.call(hashtable, id) ? addReferenceToExistingEntry(id) : addEntry(id, value);
+    };
+    var addReferenceToExistingEntry = function (id) {
+      var entry = hashtable[id];
+      ++entry.refcount;
+      return entry;
+    };
+    var addEntry = function (id, value) {
+      var entry = new ObservableEntry(observableStateTransitioner.constructor(value));
+      hashtable[id] = entry;
+      return entry;
+    };
+    this.releaseReference = function (value) {
+      var id = idSelector(value);
+      var entry = lookupEntry(id);
+      if (--entry.refcount === 0) {
+        observableStateTransitioner.destructor(entry.observable);
+        delete hashtable[id];
+      }
+    };
+    this.lookup = function (value) {
+      return lookupEntry(idSelector(value)).observable;
+    };
+    this.reconstructEntries = function (addedEntries) {
+      addedEntries.forEach(function (addedEntry) {
+        var id = idSelector(addedEntry);
+        if (js.objects.hasOwn(hashtable, id)) {
+          var entry = hashtable[id];
+          entry.observable = observableStateTransitioner.constructor(addedEntry);
+          entry.optionalObservable(entry.observable);
+        }
+      });
+    };
+    this.updateEntries = function (updatedEntries) {
+      updatedEntries.forEach(function (updatedEntry) {
+        var id = idSelector(updatedEntry);
+        if (js.objects.hasOwn(hashtable, id)) {
+          var entry = hashtable[id];
+          observableStateTransitioner.updater(entry.observable, updatedEntry);
+        }
+      });
+    };
+    this.reconstructUpdateOrDestroyAll = function (updatedValueSupplier) {
+      js.objects.forEachProperty(hashtable, function (id, entry) {
+        var updatedValue = updatedValueSupplier(id);
+        if (updatedValue) {
+          if (entry.observable) {
+            observableStateTransitioner.updater(entry.observable, updatedValue);
+          } else {
+            entry.observable = observableStateTransitioner.constructor(updatedValue);
+            entry.optionalObservable(entry.observable);
+          }
+        } else {
+          entry.optionalObservable(null);
+          observableStateTransitioner.destructor(entry.observable);
+        }
+      });
+    };
+    this.destroyAll = function (idPredicate) {
+      js.objects.forEachProperty(hashtable, function (id, entry) {
+        if (idPredicate(id)) {
+          entry.optionalObservable(null);
+          observableStateTransitioner.destructor(entry.observable);
+        }
+      });
+    };
+    this.dispose = function () {
+      this.destroyAll(function () {
+        return true;
+      });
+    }.bind(this);
+    var lookupEntry = function (id) {
+      if (typeof id !== 'string')
+        throw newInvalidIdTypeError(id);
+      if (js.objects.hasOwn(hashtable, id))
+        return hashtable[id];
+      else
+        throw new Error('No entry for id `' + id + '`.');
+    };
+  };
+}(knockout, onefold_js, ko_data_source_default_observable_state_transitioner);
+
+ko_data_source_queries_query = function (ko, js, stringifyable) {
   /**
    * @constructor
    * @extends {de.benshu.ko.dataSource.Query}
@@ -641,11 +796,7 @@ ko_data_source_queries_query = function (ko, js) {
       return this.__limit;
     },
     normalize: function () {
-      return new Query(this.predicate || function () {
-        return true;
-      }, this.comparator || function () {
-        return 0;
-      }, this.offset || 0, this.limit || this.limit === 0 ? this.limit : Number.POSITIVE_INFINITY);
+      return new Query(this.predicate || stringifyable.predicates.alwaysTrue, this.comparator || stringifyable.comparators.indifferent, this.offset || 0, this.limit || this.limit === 0 ? this.limit : Number.POSITIVE_INFINITY);
     },
     unwrapArguments: function () {
       return new Query(ko.unwrap(this.predicate), ko.unwrap(this.comparator), ko.unwrap(this.offset), ko.unwrap(this.limit));
@@ -655,7 +806,7 @@ ko_data_source_queries_query = function (ko, js) {
     }
   });
   return Query;
-}(knockout, onefold_js);
+}(knockout, onefold_js, stringifyable);
 
 ko_data_source_queries_limitable_query_configurator = function (js, Query) {
   function LimitableQueryConfigurator(predicate, comparator, offset) {
@@ -725,13 +876,14 @@ ko_data_source_client_side_data_source_client_side_data_source = function (requi
     //
     views = ko_data_source_client_side_data_source_views_views,
     //
-    AbstractDataSource = ko_data_source_abstract_data_source, Delta = ko_data_source_client_side_data_source_delta, IndexedList = indexed_list, ListStream = ko_data_source_streams_list_stream, QueryConfigurator = ko_data_source_queries_query_configurator;
+    AbstractDataSource = ko_data_source_abstract_data_source, Delta = ko_data_source_client_side_data_source_delta, IndexedList = indexed_list, ListStream = ko_data_source_streams_list_stream, ObservableEntries = ko_data_source_observable_entries, QueryConfigurator = ko_data_source_queries_query_configurator;
   /**
    * @constructor
    * @template I, V, O
-   * @extends {de.benshu.ko.dataSource.DataSource<I, V, O>}
+   * @extends {AbstractDataSource<I, V, O>}
    */
   function ClientSideDataSource(idSelector, observableEntries) {
+    observableEntries = observableEntries || new ObservableEntries(idSelector);
     var values = new IndexedList(idSelector);
     AbstractDataSource.call(this, observableEntries, function (entryId) {
       return values.getById(entryId);
@@ -776,13 +928,18 @@ ko_data_source_client_side_data_source_client_side_data_source = function (requi
     addEntries: function (newEntries) {
       this.__values.addAll(newEntries);
       new Delta(newEntries).propagateTo(this.__deltas);
+      this.__observableEntries.reconstructEntries(newEntries);
     },
     addOrUpdateEntries: function (entries) {
       var added = [], updated = [];
       entries.forEach(function (entry) {
-        return (this.__values.contains(entry) ? updated : added).push();
+        return (this.__values.contains(entry) ? updated : added).push(entry);
       }.bind(this));
+      this.__values.addAll(added);
+      this.__values.updateAll(updated);
       new Delta(added, updated).propagateTo(this.__deltas);
+      this.__observableEntries.reconstructEntries(added);
+      this.__observableEntries.updateEntries(updated);
     },
     openView: function (queryConfiguration) {
       var query = (queryConfiguration || function (x) {
@@ -799,14 +956,18 @@ ko_data_source_client_side_data_source_client_side_data_source = function (requi
     removeEntries: function (entries) {
       this.__values.removeAll(entries);
       new Delta([], [], entries).propagateTo(this.__deltas);
+      this.__observableEntries.destroyAll(function (id) {
+        return !this.__values.containsById(id);
+      }.bind(this));
     },
     replaceEntries: function (newEntries) {
       var removedEntries = this.__values.toArray();
       this.__values.clear();
       this.__values.addAll(newEntries);
       new Delta(newEntries, [], removedEntries).propagateTo(this.__deltas);
-      // TODO update only those that were already there before the delta was propagated
-      this.__observableEntries.updateEntries(newEntries);
+      this.__observableEntries.reconstructUpdateOrDestroyAll(function (id) {
+        return this.__values.tryGetById(id);
+      }.bind(this));
     },
     streamValues: function (queryConfiguration) {
       var view = this.openView(queryConfiguration);
@@ -823,6 +984,7 @@ ko_data_source_client_side_data_source_client_side_data_source = function (requi
     },
     dispose: function () {
       this.__rootView.releaseReference();
+      this.__observableEntries.dispose();
       if (this.__openViewReferences.length) {
         var views = this.__openViewReferences.length;
         var referenceCount = this.__openViewReferences.reduce(function (c, r) {
@@ -920,155 +1082,18 @@ ko_data_source_client_side_data_source_client_side_data_source = function (requi
   return ClientSideDataSource;
 }({});
 
-ko_data_source_default_observable_state_transitioner = function (ko) {
-  return function DefaultObservableStateTransitioner() {
-    var isNonObservableProperty = {};
-    Array.prototype.slice.call(arguments).forEach(function (property) {
-      isNonObservableProperty[property] = true;
-    });
-    this.constructor = function (entry) {
-      var observable = {};
-      Object.keys(entry).forEach(function (p) {
-        if (isNonObservableProperty[p])
-          observable[p] = entry[p];
-        else
-          observable[p] = ko.observable(entry[p]);
-      });
-      return observable;
-    };
-    this.updater = function (observable, updatedEntry) {
-      Object.keys(updatedEntry).filter(function (p) {
-        return !isNonObservableProperty[p];
-      }).forEach(function (p) {
-        observable[p](updatedEntry[p]);
-      });
-      return observable;
-    };
-    this.destructor = function () {
-    };
-  };
-}(knockout);
-
-ko_data_source_observable_entries = function (ko) {
-  /** @constructor */
-  function ObservableEntry(observable) {
-    this.observable = observable;
-    this.optionalObservable = ko.observable(observable);
-    this.refcount = 1;
-  }
-  // TODO reduce interface to minimum (addReference, addOptionalReference, releaseReference, updateEntries, dispose, ...?)
-  return function ObservableEntries(idSelector, observableStateTransitioner) {
-    observableStateTransitioner = observableStateTransitioner || {
-      constructor: function (entry) {
-        var observable = {};
-        Object.keys(entry).forEach(function (k) {
-          observable[k] = ko.observable(entry[k]);
-        });
-        return observable;
-      },
-      updater: function (observable, updatedEntry) {
-        Object.keys(updatedEntry).forEach(function (k) {
-          observable[k](updatedEntry[k]);
-        });
-        return observable;
-      },
-      destructor: function () {
-      }
-    };
-    var hashtable = {};
-    var newInvalidIdTypeError = function (id) {
-      throw new Error('Illegal argument: Ids must be strings (\'' + id + '\' is of type \'' + typeof id + '\').');
-    };
-    this.addReference = function (value) {
-      return addAnyReference(value).observable;
-    };
-    this.addOptionalReference = function (value) {
-      return addAnyReference(value).optionalObservable;
-    };
-    var addAnyReference = function (value) {
-      var id = idSelector(value);
-      if (typeof id !== 'string')
-        throw newInvalidIdTypeError(id);
-      return Object.prototype.hasOwnProperty.call(hashtable, id) ? addReferenceToExistingEntry(id) : addEntry(id, value);
-    };
-    var addReferenceToExistingEntry = function (id) {
-      var entry = hashtable[id];
-      ++entry.refcount;
-      return entry;
-    };
-    var addEntry = function (id, value) {
-      var entry = new ObservableEntry(observableStateTransitioner.constructor(value));
-      hashtable[id] = entry;
-      return entry;
-    };
-    this.releaseReference = function (value) {
-      var id = idSelector(value);
-      var entry = lookupEntry(id);
-      if (--entry.refcount === 0) {
-        observableStateTransitioner.destructor(entry.observable);
-        delete hashtable[id];
-      }
-    };
-    this.forcefullyReleaseRemainingReferencesById = function (id) {
-      var entry = lookupEntry(id);
-      entry.optionalObservable(null);
-      observableStateTransitioner.destructor(entry.observable);
-      delete hashtable[id];
-    };
-    this.lookup = function (value) {
-      return lookupEntry(idSelector(value)).observable;
-    };
-    this.withById = function (id, action) {
-      return action(lookupEntry(id).observable);
-    };
-    this.with = function (value, action) {
-      return this.withById(idSelector(value), action);
-    }.bind(this);
-    this.withPresentById = function (id, action) {
-      var entry = tryLookupEntry(id);
-      if (entry)
-        action(entry.observable);
-    };
-    this.withPresent = function (value, action) {
-      return this.withPresentById(idSelector(value), action);
-    }.bind(this);
-    this.updateEntries = function (updatedEntries) {
-      updatedEntries.forEach(function (updatedEntry) {
-        this.withPresent(updatedEntry, function (observable) {
-          observableStateTransitioner.updater(observable, updatedEntry);
-        });
-      }.bind(this));
-    }.bind(this);
-    this.dispose = function () {
-      Object.keys(hashtable).forEach(this.forcefullyReleaseRemainingReferencesById);
-    }.bind(this);
-    var tryLookupEntry = function (id) {
-      if (typeof id !== 'string')
-        throw newInvalidIdTypeError(id);
-      if (!Object.prototype.hasOwnProperty.call(hashtable, id))
-        return null;
-      return hashtable[id];
-    };
-    var lookupEntry = function (id) {
-      var entry = tryLookupEntry(id);
-      if (!entry)
-        throw new Error('Es existierte keine Referenz zum Objekt mit Id \'' + id + '\' oder es wurden bereits alle freigegeben.');
-      return entry;
-    };
-  };
-}(knockout);
-
 ko_data_source_server_side_data_source_server_side_data_source = function (require) {
   var ko = knockout, js = onefold_js, lists = onefold_lists,
     //
-    AbstractDataSource = ko_data_source_abstract_data_source, QueryConfigurator = ko_data_source_queries_query_configurator;
+    AbstractDataSource = ko_data_source_abstract_data_source, ObservableEntries = ko_data_source_observable_entries, QueryConfigurator = ko_data_source_queries_query_configurator;
   var hasOwn = js.objects.hasOwn;
   /**
    * @constructor
    * @template I, V, O
-   * @extends {de.benshu.ko.dataSource.DataSource<I, V, O>}
+   * @extends {AbstractDataSource<I, V, O>}
    */
-  function ServerSideDataSource(idSelector, observableEntries, querier) {
+  function ServerSideDataSource(idSelector, querier, observableEntries) {
+    observableEntries = observableEntries || new ObservableEntries(idSelector);
     var values = {};
     AbstractDataSource.call(this, observableEntries, function (entryId) {
       if (!hasOwn(values, entryId))
@@ -1138,6 +1163,7 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
       return this.__querier['issue'](query.unwrapArguments().normalize());
     },
     dispose: function () {
+      this.__observableEntries.dispose();
       if (this.__openViewReferences.length) {
         var views = this.__openViewReferences.length;
         var referenceCount = this.__openViewReferences.reduce(function (c, r) {
@@ -1166,6 +1192,7 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
    */
   function ServerSideView(dataSource, query, disposer) {
     var requestPending = ko.observable(false);
+    var dirty = ko.observable(false);
     var metadata = ko.observable({
       'unfilteredSize': dataSource.size.peek(),
       'filteredSize': 0
@@ -1175,6 +1202,7 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
     var computer = ko.pureComputed(function () {
       if (requestPending.peek())
         return requestPending();
+      dirty(true);
       requestPending(true);
       var q = query.unwrapArguments().normalize();
       window.setTimeout(function () {
@@ -1190,9 +1218,10 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
           dataSource.__size(r['unfilteredSize']);
           metadata(r);
         }).then(function () {
-          return requestPending(false);
+          dirty(false);
+          requestPending(false);
         }, function () {
-          return requestPending(false);
+          requestPending(false);
         });
       });  // TODO maybe the user wants to specify a delay > 0 ?
     });
@@ -1230,7 +1259,7 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
       return observablesList = null;
     }, null, 'asleep');
     this.__dirty = ko.pureComputed(function () {
-      return requestPending();
+      return dirty();
     });
     this.__metadata = ko.pureComputed(function () {
       return metadata();

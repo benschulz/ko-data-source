@@ -1,6 +1,6 @@
 'use strict';
 
-define(['knockout', 'onefold-js'], function (ko, js) {
+define(['knockout', 'onefold-js', 'stringifyable'], function (ko, js, stringifyable) {
     /**
      * @constructor
      * @extends {de.benshu.ko.dataSource.Query}
@@ -25,8 +25,8 @@ define(['knockout', 'onefold-js'], function (ko, js) {
 
         normalize: function () {
             return new Query(
-                this.predicate || (() => true),
-                this.comparator || (() => 0),
+                this.predicate || stringifyable.predicates.alwaysTrue,
+                this.comparator || stringifyable.comparators.indifferent,
                 this.offset || 0,
                 this.limit || this.limit === 0 ? this.limit : Number.POSITIVE_INFINITY
             );
