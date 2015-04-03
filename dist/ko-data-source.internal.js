@@ -1199,12 +1199,21 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
     });
     var previousValues = lists.newArrayList();
     var receivedValues = ko.observable();
+    var cacheSizeLimit = 1024;
+    var cache = [];
+    var cacheRanges = [];
+    var cacheSize = 0;
+    // not the exact size, but an upper bound
+    var lastPredicate = null;
+    var lastComparator = null;
     var computer = ko.pureComputed(function () {
       if (requestPending.peek())
         return requestPending();
+      var q = query.unwrapArguments().normalize();
+      if (isCached(q))
+        return receivedValues(cache.slice(q.offset, q.offset + q.limit));
       dirty(true);
       requestPending(true);
-      var q = query.unwrapArguments().normalize();
       window.setTimeout(function () {
         if (!q.equals(query.unwrapArguments().normalize()))
           return requestPending(false);
@@ -1217,6 +1226,7 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
           delete r['values'];
           dataSource.__size(r['unfilteredSize']);
           metadata(r);
+          cacheResult(q, newlyReceivedValues);
         }).then(function () {
           dirty(false);
           requestPending(false);
@@ -1225,6 +1235,43 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
         });
       });  // TODO maybe the user wants to specify a delay > 0 ?
     });
+    function isCached(q) {
+      if (q.predicate !== lastPredicate || q.comparator !== lastComparator)
+        return false;
+      for (var i = 0, l = cacheRanges.length; i < l; ++i) {
+        var cacheRange = cacheRanges[i];
+        if (cacheRange.from <= q.offset && cacheRange.to >= q.offset + q.limit)
+          return true;
+      }
+      return false;
+    }
+    function cacheResult(q, result) {
+      if (q.predicate !== lastPredicate || q.comparator === lastComparator) {
+        resetCache(q.predicate, q.comparator);
+      } else if (cacheSize + result.length > cacheSizeLimit) {
+        deleteOldestCacheRange();
+      }
+      var from = q.offset;
+      var to = from + q.limit;
+      cacheRanges.push({
+        from: from,
+        to: to >= metadata()['filteredSize'] ? Number.POSITIVE_INFINITY : to
+      });
+      for (var i = 0, l = result.length; i < l; ++i)
+        cache[from + i] = result[i];
+    }
+    function resetCache(predicate, comparator) {
+      cache = [];
+      cacheRanges = [];
+      cacheSize = 0;
+      lastPredicate = predicate;
+      lastComparator = comparator;
+    }
+    function deleteOldestCacheRange() {
+      var oldestRange = cacheRanges.shift();
+      for (var i = oldestRange.from, l = Math.max(cache.length, oldestRange.to); i < l; ++i)
+        delete cache[i];
+    }
     var values = ko.pureComputed(function () {
       computer();
       // wake up the computer
@@ -1268,7 +1315,7 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
       return metadata()['filteredSize'];
     });
     this.__size = ko.pureComputed(function () {
-      return values().size();
+      return values().length;
     });
     this.__dispose = function () {
       computer.dispose();

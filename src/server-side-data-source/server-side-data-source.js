@@ -120,14 +120,24 @@ define(function (require) {
         var previousValues = lists.newArrayList();
         var receivedValues = ko.observable();
 
+        var cache = [];
+        var cacheRangeFroms = [];
+        var cacheRangeTos = [];
+
+        var lastPredicate = null;
+        var lastComparator = null;
+
         var computer = ko.pureComputed(() => {
             if (requestPending.peek())
                 return requestPending();
 
+            var q = query.unwrapArguments().normalize();
+
+            if (isCached(q))
+                return receivedValues(cache.slice(q.offset, q.offset + q.limit));
+
             dirty(true);
             requestPending(true);
-
-            var q = query.unwrapArguments().normalize();
 
             window.setTimeout(() => {
                 if (!q.equals(query.unwrapArguments().normalize()))
@@ -142,6 +152,7 @@ define(function (require) {
                         delete r['values'];
                         dataSource.__size(r['unfilteredSize']);
                         metadata(r);
+                        cacheResult(q, newlyReceivedValues);
                     })
                     .then(() => {
                         dirty(false);
@@ -151,6 +162,64 @@ define(function (require) {
                     });
             }); // TODO maybe the user wants to specify a delay > 0 ?
         });
+
+        function isCached(q) {
+            if (q.predicate !== lastPredicate || q.comparator !== lastComparator)
+                return false;
+
+            for (var i = 0, l = cacheRangeFroms.length; i < l; ++i) {
+                var from = cacheRangeFroms[i],
+                    to = cacheRangeTos[i];
+
+                if (from <= q.offset && to >= q.offset + q.limit)
+                    return true;
+            }
+
+            return false;
+        }
+
+        function cacheResult(q, result) {
+            if (q.predicate !== lastPredicate || q.comparator !== lastComparator) {
+                resetCache(q.predicate, q.comparator);
+            }
+
+            var from = q.offset,
+                to = from + q.limit;
+
+            var mergedFrom = from,
+                mergedTo = to;
+
+            var i, j, l;
+            for (i = 0, j = 0, l = cacheRangeFroms.length; i < l; ++i) {
+                var rangeFrom = cacheRangeFroms[j] = cacheRangeFroms[i],
+                    rangeTo = cacheRangeTos[j] = cacheRangeTos[i];
+
+                if (mergedFrom <= rangeTo && mergedTo >= rangeFrom) {
+                    mergedFrom = Math.min(rangeFrom, mergedFrom);
+                    mergedTo = Math.max(rangeTo, mergedTo);
+                } else
+                    ++j;
+            }
+            cacheRangeFroms.length = cacheRangeTos.length = j;
+
+            cacheRangeFroms.push(mergedFrom);
+            cacheRangeTos.push(mergedTo >= metadata()['filteredSize'] ? Number.POSITIVE_INFINITY : mergedTo);
+
+            for (i = 0, l = result.length; i < l; ++i)
+                cache[from + i] = result[i];
+
+            window.console.log('Cache ranges:');
+            for (i = 0, l = cacheRangeFroms.length; i < l; ++i)
+                window.console.log('[' + cacheRangeFroms[i] + ', ' + cacheRangeTos[i] + ']');
+        }
+
+        function resetCache(predicate, comparator) {
+            cache = [];
+            cacheRangeFroms = [];
+            cacheRangeTos = [];
+            lastPredicate = predicate;
+            lastComparator = comparator;
+        }
 
         var values = ko.pureComputed(() => {
             computer(); // wake up the computer
@@ -194,7 +263,7 @@ define(function (require) {
 
         this.__metadata = ko.pureComputed(() => metadata());
         this.__filteredSize = ko.pureComputed(() => metadata()['filteredSize']);
-        this.__size = ko.pureComputed(() => values().size());
+        this.__size = ko.pureComputed(() => values().length);
 
         this.__dispose = () => {
             computer.dispose();
