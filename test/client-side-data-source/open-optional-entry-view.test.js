@@ -5,22 +5,28 @@ define(['./create-client-side-data-source.test'], function (createClientSideData
     var ALICE_NAME = 'Alice';
     var ALICE = {id: ALICE_ID, name: ALICE_NAME};
 
+    function createUserDataSource(initialEntries) {
+        return createClientSideDataSource(initialEntries, {
+            observableProperties: ['name']
+        });
+    }
+
     return () => {
         describe('openOptionalEntryView:', () => {
             it('Accessing the value of an optional entry view for a non-existent value should fail.', () => {
-                var dataSource = createClientSideDataSource();
+                var dataSource = createUserDataSource();
 
                 expect(()=> dataSource.openOptionalEntryView('42').value).to.throw();
             });
 
             it('Accessing the observable of an optional entry view for a non-existent value should fail.', () => {
-                var dataSource = createClientSideDataSource();
+                var dataSource = createUserDataSource();
 
                 expect(()=> dataSource.openOptionalEntryView('42').observable).to.throw();
             });
 
             it('The entry\'s value should be accessible for existent entries.', () => {
-                var dataSource = createClientSideDataSource([ALICE]);
+                var dataSource = createUserDataSource([ALICE]);
 
                 var entryView = dataSource.openOptionalEntryView(ALICE_ID);
 
@@ -28,7 +34,7 @@ define(['./create-client-side-data-source.test'], function (createClientSideData
             });
 
             it('The entry\'s observable should be accessible for existent entries.', () => {
-                var dataSource = createClientSideDataSource([ALICE]);
+                var dataSource = createUserDataSource([ALICE]);
 
                 var entryView = dataSource.openOptionalEntryView(ALICE_ID);
 
@@ -36,7 +42,7 @@ define(['./create-client-side-data-source.test'], function (createClientSideData
             });
 
             it('Two views of the same entry should return the same observable.', () => {
-                var dataSource = createClientSideDataSource([ALICE]);
+                var dataSource = createUserDataSource([ALICE]);
 
                 var entryViewA = dataSource.openOptionalEntryView(ALICE_ID),
                     entryViewB = dataSource.openOptionalEntryView(ALICE_ID);
@@ -45,7 +51,7 @@ define(['./create-client-side-data-source.test'], function (createClientSideData
             });
 
             it('An entry view should return the same observable as a regular view does for that entry.', () => {
-                var dataSource = createClientSideDataSource([ALICE]);
+                var dataSource = createUserDataSource([ALICE]);
 
                 var entryView = dataSource.openOptionalEntryView(ALICE_ID),
                     regularView = dataSource.openView();
@@ -54,7 +60,7 @@ define(['./create-client-side-data-source.test'], function (createClientSideData
             });
 
             it('An entry\'s optional observable should initially contain an observable and have `present` set to `true`.', () => {
-                var dataSource = createClientSideDataSource([ALICE]);
+                var dataSource = createUserDataSource([ALICE]);
 
                 var entryView = dataSource.openOptionalEntryView(ALICE_ID);
 
@@ -63,7 +69,7 @@ define(['./create-client-side-data-source.test'], function (createClientSideData
             });
 
             it('An entry\'s optional observable should not contain an observable and have `present` set to `false` after the entry was removed.', () => {
-                var dataSource = createClientSideDataSource([ALICE]),
+                var dataSource = createUserDataSource([ALICE]),
                     entryView = dataSource.openOptionalEntryView(ALICE_ID),
                     optionalObservable = entryView.optionalObservable;
 
@@ -74,7 +80,7 @@ define(['./create-client-side-data-source.test'], function (createClientSideData
             });
 
             it('An entry\'s optional observable should contain an observable and have `present` set to `true` after the entry was removed an readded.', () => {
-                var dataSource = createClientSideDataSource([ALICE]),
+                var dataSource = createUserDataSource([ALICE]),
                     entryView = dataSource.openOptionalEntryView(ALICE_ID),
                     optionalObservable = entryView.optionalObservable;
 

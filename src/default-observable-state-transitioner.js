@@ -1,31 +1,45 @@
 'use strict';
 
 define(['knockout'], function (ko) {
-    return function DefaultObservableStateTransitioner() {
-        var isNonObservableProperty = {};
-        Array.prototype.slice.call(arguments).forEach(function (property) {
-            isNonObservableProperty[property] = true;
-        });
+    function DefaultObservableStateTransitioner(options) {
+        this.__isObservableProperty = false;
 
-        this.constructor = entry => {
+        (options && options['observableProperties'] || []).forEach(p => {
+            this.__isObservableProperty = this.__isObservableProperty || {};
+            this.__isObservableProperty[p] = true;
+        });
+    }
+
+    DefaultObservableStateTransitioner.prototype = {
+        'constructor': function (entry) {
+            var isObservableProperty = this.__isObservableProperty;
+            if (!isObservableProperty)
+                return entry;
+
             var observable = {};
 
             Object.keys(entry).forEach(p => {
-                if (isNonObservableProperty[p])
-                    observable[p] = entry[p];
-                else
+                if (isObservableProperty && isObservableProperty[p])
                     observable[p] = ko.observable(entry[p]);
+                else
+                    observable[p] = entry[p];
             });
 
             return observable;
-        };
-        this.updater = (observable, updatedEntry) => {
+        },
+        'updater': function (observable, updatedEntry) {
+            var isObservableProperty = this.__isObservableProperty;
+            if (!isObservableProperty)
+                return observable;
+
             Object.keys(updatedEntry)
-                .filter(p => !isNonObservableProperty[p])
+                .filter(p => isObservableProperty && isObservableProperty[p])
                 .forEach(p => observable[p](updatedEntry[p]));
 
             return observable;
-        };
-        this.destructor = () => {};
+        },
+        'destructor': function () {}
     };
+
+    return DefaultObservableStateTransitioner;
 });

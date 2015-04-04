@@ -1,11 +1,16 @@
 'use strict';
 
 define(['ko-data-source'], function (koDataSource) {
-    return function (initialEntries) {
-        var dataSource = new koDataSource.ClientSideDataSource(e =>  e.id || '' + e);
+    return function (initialEntriesOrOptions, options) {
+        options = options || initialEntriesOrOptions || {};
 
-        if (initialEntries)
-            dataSource.addEntries(initialEntries);
+        var idSelector = e =>  e.id || '' + e;
+        var observableStateTransitioner = new koDataSource.DefaultObservableStateTransitioner(options);
+        var observableEntries = new koDataSource.ObservableEntries(idSelector, observableStateTransitioner);
+        var dataSource = new koDataSource.ClientSideDataSource(idSelector, observableEntries);
+
+        if (Array.isArray(initialEntriesOrOptions))
+            dataSource.addEntries(initialEntriesOrOptions);
 
         return dataSource;
     };

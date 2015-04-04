@@ -1165,32 +1165,42 @@ ko_data_source_streams_list_stream = function (js, MappedStream) {
 }(onefold_js, ko_data_source_streams_mapped_stream);
 
 ko_data_source_default_observable_state_transitioner = function (ko) {
-  return function DefaultObservableStateTransitioner() {
-    var isNonObservableProperty = {};
-    Array.prototype.slice.call(arguments).forEach(function (property) {
-      isNonObservableProperty[property] = true;
-    });
-    this.constructor = function (entry) {
+  function DefaultObservableStateTransitioner(options) {
+    this.__isObservableProperty = false;
+    (options && options['observableProperties'] || []).forEach(function (p) {
+      this.__isObservableProperty = this.__isObservableProperty || {};
+      this.__isObservableProperty[p] = true;
+    }.bind(this));
+  }
+  DefaultObservableStateTransitioner.prototype = {
+    'constructor': function (entry) {
+      var isObservableProperty = this.__isObservableProperty;
+      if (!isObservableProperty)
+        return entry;
       var observable = {};
       Object.keys(entry).forEach(function (p) {
-        if (isNonObservableProperty[p])
-          observable[p] = entry[p];
-        else
+        if (isObservableProperty && isObservableProperty[p])
           observable[p] = ko.observable(entry[p]);
+        else
+          observable[p] = entry[p];
       });
       return observable;
-    };
-    this.updater = function (observable, updatedEntry) {
+    },
+    'updater': function (observable, updatedEntry) {
+      var isObservableProperty = this.__isObservableProperty;
+      if (!isObservableProperty)
+        return observable;
       Object.keys(updatedEntry).filter(function (p) {
-        return !isNonObservableProperty[p];
+        return isObservableProperty && isObservableProperty[p];
       }).forEach(function (p) {
         return observable[p](updatedEntry[p]);
       });
       return observable;
-    };
-    this.destructor = function () {
-    };
+    },
+    'destructor': function () {
+    }
   };
+  return DefaultObservableStateTransitioner;
 }(knockout);
 
 ko_data_source_observable_entries = function (ko, js, DefaultObservableStateTransitioner) {
@@ -1225,7 +1235,7 @@ ko_data_source_observable_entries = function (ko, js, DefaultObservableStateTran
       return entry;
     };
     var addEntry = function (id, value) {
-      var entry = new ObservableEntry(observableStateTransitioner.constructor(value));
+      var entry = new ObservableEntry(observableStateTransitioner['constructor'](value));
       hashtable[id] = entry;
       return entry;
     };
@@ -1233,7 +1243,7 @@ ko_data_source_observable_entries = function (ko, js, DefaultObservableStateTran
       var id = idSelector(value);
       var entry = lookupEntry(id);
       if (--entry.refcount === 0) {
-        observableStateTransitioner.destructor(entry.observable);
+        destroy(entry);
         delete hashtable[id];
       }
     };
@@ -1245,8 +1255,10 @@ ko_data_source_observable_entries = function (ko, js, DefaultObservableStateTran
         var id = idSelector(addedEntry);
         if (js.objects.hasOwn(hashtable, id)) {
           var entry = hashtable[id];
-          entry.observable = observableStateTransitioner.constructor(addedEntry);
-          entry.optionalObservable(entry.observable);
+          if (!entry.observable) {
+            entry.observable = observableStateTransitioner['constructor'](addedEntry);
+            entry.optionalObservable(entry.observable);
+          }
         }
       });
     };
@@ -1255,7 +1267,7 @@ ko_data_source_observable_entries = function (ko, js, DefaultObservableStateTran
         var id = idSelector(updatedEntry);
         if (js.objects.hasOwn(hashtable, id)) {
           var entry = hashtable[id];
-          observableStateTransitioner.updater(entry.observable, updatedEntry);
+          observableStateTransitioner['updater'](entry.observable, updatedEntry);
         }
       });
     };
@@ -1264,25 +1276,28 @@ ko_data_source_observable_entries = function (ko, js, DefaultObservableStateTran
         var updatedValue = updatedValueSupplier(id);
         if (updatedValue) {
           if (entry.observable) {
-            observableStateTransitioner.updater(entry.observable, updatedValue);
+            observableStateTransitioner['updater'](entry.observable, updatedValue);
           } else {
-            entry.observable = observableStateTransitioner.constructor(updatedValue);
+            entry.observable = observableStateTransitioner['constructor'](updatedValue);
             entry.optionalObservable(entry.observable);
           }
         } else {
-          entry.optionalObservable(null);
-          observableStateTransitioner.destructor(entry.observable);
+          destroy(entry);
         }
       });
     };
     this.destroyAll = function (idPredicate) {
       js.objects.forEachProperty(hashtable, function (id, entry) {
-        if (idPredicate(id)) {
-          entry.optionalObservable(null);
-          observableStateTransitioner.destructor(entry.observable);
-        }
+        if (idPredicate(id))
+          destroy(entry);
       });
     };
+    function destroy(entry) {
+      var observable = entry.observable;
+      entry.optionalObservable(null);
+      entry.observable = null;
+      observableStateTransitioner['destructor'](observable);
+    }
     this.dispose = function () {
       this.destroyAll(function () {
         return true;
@@ -2043,11 +2058,9 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
     });
     var previousValues = lists.newArrayList();
     var receivedValues = ko.observable();
-    var cacheSizeLimit = 1024;
     var cache = [];
-    var cacheRanges = [];
-    var cacheSize = 0;
-    // not the exact size, but an upper bound
+    var cacheRangeFroms = [];
+    var cacheRangeTos = [];
     var lastPredicate = null;
     var lastComparator = null;
     var computer = ko.pureComputed(function () {
@@ -2082,39 +2095,43 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
     function isCached(q) {
       if (q.predicate !== lastPredicate || q.comparator !== lastComparator)
         return false;
-      for (var i = 0, l = cacheRanges.length; i < l; ++i) {
-        var cacheRange = cacheRanges[i];
-        if (cacheRange.from <= q.offset && cacheRange.to >= q.offset + q.limit)
+      for (var i = 0, l = cacheRangeFroms.length; i < l; ++i) {
+        var from = cacheRangeFroms[i], to = cacheRangeTos[i];
+        if (from <= q.offset && to >= q.offset + q.limit)
           return true;
       }
       return false;
     }
     function cacheResult(q, result) {
-      if (q.predicate !== lastPredicate || q.comparator === lastComparator) {
+      if (q.predicate !== lastPredicate || q.comparator !== lastComparator) {
         resetCache(q.predicate, q.comparator);
-      } else if (cacheSize + result.length > cacheSizeLimit) {
-        deleteOldestCacheRange();
       }
-      var from = q.offset;
-      var to = from + q.limit;
-      cacheRanges.push({
-        from: from,
-        to: to >= metadata()['filteredSize'] ? Number.POSITIVE_INFINITY : to
-      });
-      for (var i = 0, l = result.length; i < l; ++i)
+      var from = q.offset, to = from + q.limit;
+      var mergedFrom = from, mergedTo = to;
+      var i, j, l;
+      for (i = 0, j = 0, l = cacheRangeFroms.length; i < l; ++i) {
+        var rangeFrom = cacheRangeFroms[j] = cacheRangeFroms[i], rangeTo = cacheRangeTos[j] = cacheRangeTos[i];
+        if (mergedFrom <= rangeTo && mergedTo >= rangeFrom) {
+          mergedFrom = Math.min(rangeFrom, mergedFrom);
+          mergedTo = Math.max(rangeTo, mergedTo);
+        } else
+          ++j;
+      }
+      cacheRangeFroms.length = cacheRangeTos.length = j;
+      cacheRangeFroms.push(mergedFrom);
+      cacheRangeTos.push(mergedTo >= metadata()['filteredSize'] ? Number.POSITIVE_INFINITY : mergedTo);
+      for (i = 0, l = result.length; i < l; ++i)
         cache[from + i] = result[i];
+      window.console.log('Cache ranges:');
+      for (i = 0, l = cacheRangeFroms.length; i < l; ++i)
+        window.console.log('[' + cacheRangeFroms[i] + ', ' + cacheRangeTos[i] + ']');
     }
     function resetCache(predicate, comparator) {
       cache = [];
-      cacheRanges = [];
-      cacheSize = 0;
+      cacheRangeFroms = [];
+      cacheRangeTos = [];
       lastPredicate = predicate;
       lastComparator = comparator;
-    }
-    function deleteOldestCacheRange() {
-      var oldestRange = cacheRanges.shift();
-      for (var i = oldestRange.from, l = Math.max(cache.length, oldestRange.to); i < l; ++i)
-        delete cache[i];
     }
     var values = ko.pureComputed(function () {
       computer();

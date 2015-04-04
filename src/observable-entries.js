@@ -37,7 +37,7 @@ define(['knockout', 'onefold-js', './default-observable-state-transitioner'], fu
         };
 
         var addEntry = function (id, value) {
-            var entry = new ObservableEntry(observableStateTransitioner.constructor(value));
+            var entry = new ObservableEntry(observableStateTransitioner['constructor'](value));
             hashtable[id] = entry;
             return entry;
         };
@@ -46,7 +46,7 @@ define(['knockout', 'onefold-js', './default-observable-state-transitioner'], fu
             var id = idSelector(value);
             var entry = lookupEntry(id);
             if (--entry.refcount === 0) {
-                observableStateTransitioner.destructor(entry.observable);
+                destroy(entry);
                 delete hashtable[id];
             }
         };
@@ -59,8 +59,11 @@ define(['knockout', 'onefold-js', './default-observable-state-transitioner'], fu
 
                 if (js.objects.hasOwn(hashtable, id)) {
                     var entry = hashtable[id];
-                    entry.observable = observableStateTransitioner.constructor(addedEntry);
-                    entry.optionalObservable(entry.observable);
+
+                    if (!entry.observable) {
+                        entry.observable = observableStateTransitioner['constructor'](addedEntry);
+                        entry.optionalObservable(entry.observable);
+                    }
                 }
             });
         };
@@ -71,7 +74,7 @@ define(['knockout', 'onefold-js', './default-observable-state-transitioner'], fu
 
                 if (js.objects.hasOwn(hashtable, id)) {
                     var entry = hashtable[id];
-                    observableStateTransitioner.updater(entry.observable, updatedEntry);
+                    observableStateTransitioner['updater'](entry.observable, updatedEntry);
                 }
             });
         };
@@ -82,26 +85,30 @@ define(['knockout', 'onefold-js', './default-observable-state-transitioner'], fu
 
                 if (updatedValue) {
                     if (entry.observable) {
-                        observableStateTransitioner.updater(entry.observable, updatedValue);
+                        observableStateTransitioner['updater'](entry.observable, updatedValue);
                     } else {
-                        entry.observable = observableStateTransitioner.constructor(updatedValue);
+                        entry.observable = observableStateTransitioner['constructor'](updatedValue);
                         entry.optionalObservable(entry.observable);
                     }
                 } else {
-                    entry.optionalObservable(null);
-                    observableStateTransitioner.destructor(entry.observable);
+                    destroy(entry);
                 }
             });
         };
 
         this.destroyAll = idPredicate => {
             js.objects.forEachProperty(hashtable, (id, entry) => {
-                if (idPredicate(id)) {
-                    entry.optionalObservable(null);
-                    observableStateTransitioner.destructor(entry.observable);
-                }
+                if (idPredicate(id))
+                    destroy(entry);
             });
         };
+
+        function destroy(entry) {
+            var observable = entry.observable;
+            entry.optionalObservable(null);
+            entry.observable = null;
+            observableStateTransitioner['destructor'](observable);
+        }
 
         this.dispose = () => { this.destroyAll(() => true); };
 
