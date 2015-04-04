@@ -44,10 +44,10 @@ var ClientSideDataSource = require('ko-data-source').ClientSideDataSource;
 var users = new ClientSideDataSource(e => e.id);
 
 users.addEntries([
-	{ id: 1, name: 'Alice', gender: 'female', age: 26 },
-	{ id: 2, name: 'Bob', gender: 'male', age 32 },
-	{ id: 3, name: 'Carol', gender: 'female', age: 44 },
-	{ id: 4, name: 'Dan', gender: 'male', age: 19 }
+	{ id: 'alice', name: 'Alice', gender: 'female', age: 26 },
+	{ id: 'bob', name: 'Bob', gender: 'male', age 32 },
+	{ id: 'carol', name: 'Carol', gender: 'female', age: 44 },
+	{ id: 'dan', name: 'Dan', gender: 'male', age: 19 }
 ]);
 ```
 
