@@ -82,7 +82,8 @@ define(function (require) {
         streamValues: function (queryConfiguration) {
             /** @type {?} */
             var query = (queryConfiguration || (x => x))(new QueryConfigurator());
-            return this.__querier['issue'](query.unwrapArguments().normalize());
+            return this.__querier['issue'](query.unwrapArguments().normalize())
+                .then(r => r.values);
         },
 
         dispose: function () {

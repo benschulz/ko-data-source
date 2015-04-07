@@ -1175,7 +1175,9 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
       var query = (queryConfiguration || function (x) {
         return x;
       })(new QueryConfigurator());
-      return this.__querier['issue'](query.unwrapArguments().normalize());
+      return this.__querier['issue'](query.unwrapArguments().normalize()).then(function (r) {
+        return r.values;
+      });
     },
     dispose: function () {
       this.__observableEntries.dispose();
