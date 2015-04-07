@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/observable-entries.js</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../prettify.css">
+    <link rel="stylesheet" href="../base.css">
+    <style type='text/css'>
+        div.coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class="header high">
+    <h1>Code coverage report for <span class="entity">src/observable-entries.js</span></h1>
+    <h2>
+        Statements: <span class="metric">81.58% <small>(62 / 76)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Branches: <span class="metric">50% <small>(12 / 24)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Functions: <span class="metric">90% <small>(9 / 10)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Lines: <span class="metric">81.69% <small>(58 / 71)</small></span> &nbsp;&nbsp;&nbsp;&nbsp;
+        Ignored: <span class="metric"><span class="ignore-none">none</span></span> &nbsp;&nbsp;&nbsp;&nbsp;
+    </h2>
+    <div class="path"><a href="../index.html">All files</a> &#187; <a href="index.html">src/</a> &#187; observable-entries.js</div>
+</div>
+<div class="body">
+<pre><table class="coverage">
+<tr><td class="line-count">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125</td><td class="line-coverage"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">12</span>
+<span class="cline-any cline-yes">12</span>
+<span class="cline-any cline-yes">12</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">16</span>
+<span class="cline-any cline-yes">16</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">4</span>
+<span class="cline-any cline-yes">4</span>
+<span class="cline-any cline-yes">4</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">12</span>
+<span class="cline-any cline-yes">12</span>
+<span class="cline-any cline-yes">12</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">54</span>
+<span class="cline-any cline-yes">792</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">792</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">6</span>
+<span class="cline-any cline-yes">94</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">94</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">9</span>
+<span class="cline-any cline-yes">4</span>
+<span class="cline-any cline-yes">4</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">5</span>
+<span class="cline-any cline-yes">5</span>
+<span class="cline-any cline-yes">3</span>
+<span class="cline-any cline-yes">3</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">56</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-yes">1</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">'use strict';
+&nbsp;
+define(['knockout', 'onefold-js', './default-observable-state-transitioner'], function (ko, js, DefaultObservableStateTransitioner) {
+    /** @constructor */
+    function ObservableEntry(observable) {
+        this.observable = observable;
+        this.optionalObservable = ko.observable(observable);
+        this.refcount = 1;
+    }
+&nbsp;
+    // TODO clean up extract prototype
+    return function ObservableEntries(idSelector, observableStateTransitioner) {
+        observableStateTransitioner = observableStateTransitioner || <span class="branch-1 cbranch-no" title="branch not covered" >new DefaultObservableStateTransitioner();</span>
+&nbsp;
+        var hashtable = {};
+&nbsp;
+        var newInvalidIdTypeError = <span class="fstat-no" title="function not covered" >function (id) {</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error('Illegal argument: Ids must be strings (\'' + id + '\' is of type \'' + typeof id + '\').');</span>
+        };
+&nbsp;
+        this.addReference = value =&gt; addAnyReference(value).observable;
+&nbsp;
+        this.addOptionalReference = value =&gt; addAnyReference(value).optionalObservable;
+&nbsp;
+        var addAnyReference = function (value) {
+            var id = idSelector(value);
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof id !== 'string')
+<span class="cstat-no" title="statement not covered" >                throw newInvalidIdTypeError(id);</span>
+&nbsp;
+            return Object.prototype.hasOwnProperty.call(hashtable, id) ? addReferenceToExistingEntry(id) : addEntry(id, value);
+        };
+&nbsp;
+        var addReferenceToExistingEntry = function (id) {
+            var entry = hashtable[id];
+            ++entry.refcount;
+            return entry;
+        };
+&nbsp;
+        var addEntry = function (id, value) {
+            var entry = new ObservableEntry(observableStateTransitioner['constructor'](value));
+            hashtable[id] = entry;
+            return entry;
+        };
+&nbsp;
+        this.releaseReference = function (value) {
+            var id = idSelector(value);
+            var entry = lookupEntry(id);
+            <span class="missing-if-branch" title="else path not taken" >E</span>if (--entry.refcount === 0) {
+                destroy(entry);
+                delete hashtable[id];
+            }
+        };
+&nbsp;
+        this.lookup = value =&gt; <span class="cstat-no" title="statement not covered" >lookupEntry(idSelector(value)).observable;</span>
+&nbsp;
+        this.reconstructEntries = addedEntries =&gt; {
+            addedEntries.forEach(addedEntry =&gt; {
+                var id = idSelector(addedEntry);
+&nbsp;
+                if (js.objects.hasOwn(hashtable, id)) {
+                    var entry = hashtable[id];
+&nbsp;
+                    <span class="missing-if-branch" title="else path not taken" >E</span>if (!entry.observable) {
+                        entry.observable = observableStateTransitioner['constructor'](addedEntry);
+                        entry.optionalObservable(entry.observable);
+                    }
+                }
+            });
+        };
+&nbsp;
+        this.updateEntries = updatedEntries =&gt; {
+            updatedEntries.forEach(updatedEntry =&gt; {
+                var id = idSelector(updatedEntry);
+&nbsp;
+                <span class="missing-if-branch" title="if path not taken" >I</span>if (js.objects.hasOwn(hashtable, id)) {
+<span class="cstat-no" title="statement not covered" >                    var entry = hashtable[id];</span>
+<span class="cstat-no" title="statement not covered" >                    observableStateTransitioner['updater'](entry.observable, updatedEntry);</span>
+                }
+            });
+        };
+&nbsp;
+        this.reconstructUpdateOrDestroyAll = updatedValueSupplier =&gt; {
+            js.objects.forEachProperty(hashtable, (id, entry) =&gt; {
+<span class="cstat-no" title="statement not covered" >                var updatedValue = updatedValueSupplier(id);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                if (updatedValue) {</span>
+<span class="cstat-no" title="statement not covered" >                    if (entry.observable) {</span>
+<span class="cstat-no" title="statement not covered" >                        observableStateTransitioner['updater'](entry.observable, updatedValue);</span>
+                    } else {
+<span class="cstat-no" title="statement not covered" >                        entry.observable = observableStateTransitioner['constructor'](updatedValue);</span>
+<span class="cstat-no" title="statement not covered" >                        entry.optionalObservable(entry.observable);</span>
+                    }
+                } else {
+<span class="cstat-no" title="statement not covered" >                    destroy(entry);</span>
+                }
+            });
+        };
+&nbsp;
+        this.destroyAll = idPredicate =&gt; {
+            js.objects.forEachProperty(hashtable, (id, entry) =&gt; {
+                <span class="missing-if-branch" title="else path not taken" >E</span>if (idPredicate(id))
+                    destroy(entry);
+            });
+        };
+&nbsp;
+        function destroy(entry) {
+            var observable = entry.observable;
+            entry.optionalObservable(null);
+            entry.observable = null;
+            observableStateTransitioner['destructor'](observable);
+        }
+&nbsp;
+        this.dispose = () =&gt; { this.destroyAll(() =&gt; true); };
+&nbsp;
+        var lookupEntry = function (id) {
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof id !== 'string')
+<span class="cstat-no" title="statement not covered" >                throw newInvalidIdTypeError(id);</span>
+            <span class="missing-if-branch" title="else path not taken" >E</span>if (js.objects.hasOwn(hashtable, id))
+                return hashtable[id];
+            else
+<span class="cstat-no" title="statement not covered" >                throw new Error('No entry for id `' + id + '`.');</span>
+        };
+    };
+});
+&nbsp;</pre></td></tr>
+</table></pre>
+
+</div>
+<div class="footer">
+    <div class="meta">Generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Apr 07 2015 21:08:40 GMT+0200 (CEST)</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
