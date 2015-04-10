@@ -6,7 +6,7 @@ This module implements the data source API required by [ko-grid](https://github.
 
 **Libraries**. The only dependency is [knockout](http://knockoutjs.com/).
 
-**Browser**. This module has been tested on recent builds of Firefox, Chromium, Midori (WebKit based) and Internex Explorer 11. Internet Explorer 10 is supported as well, as long as a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) polyfill is present.
+**Browser**. This module has been tested on recent builds of Firefox, Chromium, Midori (WebKit based) and Internet Explorer 11. Internet Explorer 10 is supported as well, as long as a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) polyfill is present.
 
 ## Concepts
 
