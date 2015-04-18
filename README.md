@@ -1,4 +1,4 @@
-# ko-data-source
+# ko-data-source [![Build Status](https://travis-ci.org/benschulz/ko-data-source.svg?branch=master)](https://travis-ci.org/benschulz/ko-data-source) [![Coverage Status](https://coveralls.io/repos/benschulz/ko-data-source/badge.svg?branch=master)](https://coveralls.io/r/benschulz/ko-data-source?branch=master)
 
 This module implements the data source API required by [ko-grid](https://github.com/benschulz/ko-grid). The API allows for filtering, sorting and "clipping" (offset+limit) of all entries.
 
