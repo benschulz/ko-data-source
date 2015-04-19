@@ -2124,9 +2124,6 @@ ko_data_source_server_side_data_source_server_side_data_source = function (requi
       cacheRangeTos.push(mergedTo >= metadata()['filteredSize'] ? Number.POSITIVE_INFINITY : mergedTo);
       for (i = 0, l = result.length; i < l; ++i)
         cache[from + i] = result[i];
-      window.console.log('Cache ranges:');
-      for (i = 0, l = cacheRangeFroms.length; i < l; ++i)
-        window.console.log('[' + cacheRangeFroms[i] + ', ' + cacheRangeTos[i] + ']');
     }
     function resetCache(predicate, comparator) {
       cache = [];

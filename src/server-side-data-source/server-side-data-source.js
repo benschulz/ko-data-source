@@ -208,10 +208,6 @@ define(function (require) {
 
             for (i = 0, l = result.length; i < l; ++i)
                 cache[from + i] = result[i];
-
-            window.console.log('Cache ranges:');
-            for (i = 0, l = cacheRangeFroms.length; i < l; ++i)
-                window.console.log('[' + cacheRangeFroms[i] + ', ' + cacheRangeTos[i] + ']');
         }
 
         function resetCache(predicate, comparator) {
@@ -295,5 +291,4 @@ define(function (require) {
     }, ServerSideView.prototype);
 
     return ServerSideDataSource;
-})
-;
+});
