@@ -3,14 +3,6 @@
 define(['../create-client-side-data-source.test'], function (createClientSideDataSource) {
     return function () {
         describe('sortedBy:', function () {
-            it('A sorted view should be disposable.', function () {
-                var dataSource = createClientSideDataSource();
-
-                var sorted = dataSource.openView(q =>q.sortedBy(() => 0));
-
-                sorted.dispose();
-            });
-
             it('An elements of A sorted view should initially be sorted as defined.', function () {
                 var dataSource = createClientSideDataSource([3, 7, 9, 10, 4, 1, 5, 2, 6, 8]);
 

@@ -1,22 +1,22 @@
 'use strict';
 
-define(['./create-client-side-data-source.test'], function (createClientSideDataSource) {
-    var ALICE_ID = '1';
-    var ALICE_NAME = 'Alice';
-    var ALICE = {id: ALICE_ID, name: ALICE_NAME};
-    var BOB_ID = '2';
-    var BOB_NAME = 'Bob';
-    var BOB = {id: BOB_ID, name: BOB_NAME};
-    var CAROL_ID = '3';
-    var CAROL_NAME = 'Carol';
-    var CAROL = {id: CAROL_ID, name: CAROL_NAME};
-    var DAN_ID = '4';
-    var DAN_NAME = 'Dan';
-    var DAN = {id: DAN_ID, name: DAN_NAME};
+define([], function () {
+    return factory => {
+        var ALICE_ID = '1';
+        var ALICE_NAME = 'Alice';
+        var ALICE = {id: ALICE_ID, name: ALICE_NAME};
+        var BOB_ID = '2';
+        var BOB_NAME = 'Bob';
+        var BOB = {id: BOB_ID, name: BOB_NAME};
+        var CAROL_ID = '3';
+        var CAROL_NAME = 'Carol';
+        var CAROL = {id: CAROL_ID, name: CAROL_NAME};
+        var DAN_ID = '4';
+        var DAN_NAME = 'Dan';
+        var DAN = {id: DAN_ID, name: DAN_NAME};
 
-    return () => {
         function createUserDataSource() {
-            return createClientSideDataSource([DAN, CAROL, ALICE, BOB]);
+            return factory([DAN, CAROL, ALICE, BOB]);
         }
 
         describe('streamValues:', () => {

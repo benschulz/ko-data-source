@@ -5,14 +5,6 @@ define(['../create-client-side-data-source.test', './filtered-by.test', './sorte
 
     return () => {
         describe('openView:', function () {
-            it('The root view should be disposable.', function () {
-                var dataSource = createClientSideDataSource();
-
-                var rootView = dataSource.openView();
-
-                rootView.dispose();
-            });
-
             Array.prototype.slice.call(tests).forEach(function (test) {
                 test();
             });

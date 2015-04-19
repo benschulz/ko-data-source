@@ -48,7 +48,10 @@ require(['require', 'chai'], function (require, chai) {
         });
     });
 
-    require(['client-side-data-source/client-side-data-source.test'], function () {
+    require([
+        'client-side-data-source/client-side-data-source.test',
+        'server-side-data-source/server-side-data-source.test'
+    ], function () {
         window.__karma__.start();
     });
 

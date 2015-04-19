@@ -3,14 +3,6 @@
 define(['../create-client-side-data-source.test'], function (createClientSideDataSource) {
     return function () {
         describe('limitedTo:', function () {
-            it('A limited view should be disposable.', function () {
-                var dataSource = createClientSideDataSource();
-
-                var limited = dataSource.openView(q => q.limitedTo(1));
-
-                limited.dispose();
-            });
-
             it('A limited view should initially contain only `limit` entries.', function () {
                 var dataSource = createClientSideDataSource([1, 2, 3, 4]);
 

@@ -3,14 +3,6 @@
 define(['../create-client-side-data-source.test'], function (createClientSideDataSource) {
     return function () {
         describe('filteredBy:', function () {
-            it('A filtered view should be disposable.', function () {
-                var dataSource = createClientSideDataSource();
-
-                var filteredView = dataSource.openView(q => q.filteredBy(() => true));
-
-                filteredView.dispose();
-            });
-
             it('A filtered view should initially only contain elements matching the predicate.', function () {
                 var dataSource = createClientSideDataSource([3, 7, 9, 10, 4, 1, 5, 2, 6, 8]);
 

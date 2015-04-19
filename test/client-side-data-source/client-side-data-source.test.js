@@ -1,13 +1,16 @@
 'use strict';
 
 define([
-    './open-view/open-view.test',
-    './size.test',
+    '../data-source/data-source.test',
+    './create-client-side-data-source.test',
     './open-entry-view.test',
     './open-optional-entry-view.test',
-    './stream-values.test'
-], function () {
-    var tests = Array.prototype.slice.call(arguments);
+    './open-view/open-view.test',
+    './size.test',
+], function (dataSourceTests, createClientSideDataSource) {
+    var tests = Array.prototype.slice.call(arguments, 2);
+
+    dataSourceTests('ClientSideDataSource', createClientSideDataSource);
 
     describe('ClientSideDataSource:', function () {
         Array.prototype.slice.call(tests).forEach(function (test) {
