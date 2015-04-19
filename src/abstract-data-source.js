@@ -51,20 +51,14 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
      */
     function DefaultEntryView(optionalEntryView) {
         this.__optionalEntryView = optionalEntryView;
-        this.__subscription = null;
+        this.__subscription = optionalEntryView.optionalObservable.subscribe(function () {
+            throw new Error('Illegal state: A non-optional view for this entry is still open.');
+        });
     }
 
     DefaultEntryView.prototype = {
         get value() { return this.__optionalEntryView.value; },
-        get observable() {
-            if (!this.__subscription) {
-                this.__subscription = this.__optionalEntryView.optionalObservable.subscribe(function () {
-                    throw new Error('Illegal state: A non-optional view for this entry is still open.');
-                });
-            }
-
-            return this.__optionalEntryView.observable;
-        },
+        get observable() { return this.__optionalEntryView.observable; },
         dispose: function () {
             if (this.__subscription)
                 this.__subscription.dispose();
@@ -93,10 +87,20 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
         this.__entryId = entryId;
 
         this.__disposed = false;
-        this.__lastKnownValue = null;
-        this.__observable = null;
-        this.__optionalObservable = null;
-        this.__subscription = null;
+        this.__lastKnownValue = getValueById(entryId);
+
+        var sharedObservable = observableEntries.addOptionalReference(this.value);
+        this.__observable = sharedObservable();
+        this.__optionalObservable = ko.observable({
+            'present': true,
+            'observable': this.__observable
+        });
+        this.__subscription = sharedObservable.subscribe(observable => {
+            this.__optionalObservable({
+                'present': !!observable,
+                'observable': observable
+            });
+        });
     }
 
     DefaultOptionalEntryView.prototype = {
@@ -110,28 +114,10 @@ define(['knockout', 'onefold-js', './streams/mapped-stream'], function (ko, js, 
         },
         get observable() {
             this.__assertNotDisposed();
-            return (this.__observable || this.optionalObservable) && this.__observable;
+            return this.__observable;
         },
         get optionalObservable() {
             this.__assertNotDisposed();
-            if (this.__optionalObservable)
-                return this.__optionalObservable;
-
-            var sharedObservable = this.__observableEntries.addOptionalReference(this.value);
-
-            this.__observable = sharedObservable();
-            this.__optionalObservable = ko.observable({
-                'present': true,
-                'observable': this.__observable
-            });
-
-            this.__subscription = sharedObservable.subscribe(observable => {
-                this.__optionalObservable({
-                    'present': !!observable,
-                    'observable': observable
-                });
-            });
-
             return this.__optionalObservable;
         },
         dispose: function () {
