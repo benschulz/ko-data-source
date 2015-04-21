@@ -16,17 +16,17 @@ The core concept implemented by this module is the *data source*. A data source 
 
 ### View
 
-Data sources offer an `openView`-method which return views onto the data source. When opening a view, a predicate for filtering, a comparator for ordering, as well as an offset and a limit can be specified to affect the contents of the view.
+Data sources offer an `openView`-method which return views onto the data source. When opening a view, a predicate for filtering, a comparator for ordering, as well as an offset and a limit can be specified to reduce the view contents to the desired (sorted) set.
 
 All four of the view parameters (predicate, comparator, offset and limit) may be knockout subscribables. If any of them are and change their value, the view becomes `dirty` until it can reflect the change.
 
-Views know their size, their filtered size (what their size would be if neither an offset nor a limit were specified) as well as their entries. A views entries are accessible though its properties `values` and `observables`.
+Views know their size, their filtered size (what their size would be if neither an offset nor a limit were specified) as well as their entries. A views entries are accessible through its `values` and `observables` properties.
 
 ### Values and Observables
 
 The data source API differentiates between values and observables. Values are POJOs, generally JSON-deserialized objects left as-is. Observables are the corresponding knockout view models.
 
-From a convenience point of view, one would generally prefer to work with observables. However, `ko.observable`s are fairly expensive objects, both in terms of time and space. Therefore it is recommended to work with values where possible and with observables where necessary.
+From a convenience point of view, one would generally prefer to work with observables. However, `ko.observable`s are fairly expensive objects in terms of both time and space. Therefore it is recommended to work with values where possible and with observables where necessary.
 
 ### Streams
 
