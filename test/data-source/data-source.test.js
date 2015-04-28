@@ -10,7 +10,7 @@ define([
 
     return (name, factory) => {
         describe('DataSource (' + name + '):', () => {
-            Array.prototype.slice.call(tests).forEach(test => test(factory));
+            tests.forEach(test => test(factory));
         });
     };
 });
